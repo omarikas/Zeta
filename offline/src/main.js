@@ -102,24 +102,24 @@ function generateState() {
     return state;
 }
 
+// Cloudflare Worker URL for token proxy (avoids CORS)
+const TOKEN_PROXY_URL = 'https://sf-token.your-subdomain.workers.dev';
+
 async function exchangeCodeForToken(code) {
     const codeVerifier = window.localStorage.getItem('oauth_code_verifier');
     window.localStorage.removeItem('oauth_code_verifier');
 
-    const tokenUrl = `${OAUTH_CONFIG.loginUrl}/services/oauth2/token`;
-    const params = new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: OAUTH_CONFIG.clientId,
-        client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
-        redirect_uri: OAUTH_CONFIG.callbackUrl,
-        code: code,
-        code_verifier: codeVerifier
-    });
-
-    const response = await fetch(tokenUrl, {
+    const response = await fetch(TOKEN_PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            grant_type: 'authorization_code',
+            client_id: OAUTH_CONFIG.clientId,
+            client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
+            redirect_uri: OAUTH_CONFIG.callbackUrl,
+            code: code,
+            code_verifier: codeVerifier
+        })
     });
 
     if (!response.ok) {
@@ -135,18 +135,15 @@ async function refreshAccessToken() {
         throw new Error('No refresh token available');
     }
 
-    const tokenUrl = `${OAUTH_CONFIG.loginUrl}/services/oauth2/token`;
-    const params = new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: OAUTH_CONFIG.clientId,
-        client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
-        refresh_token: refreshToken
-    });
-
-    const response = await fetch(tokenUrl, {
+    const response = await fetch(TOKEN_PROXY_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            grant_type: 'refresh_token',
+            client_id: OAUTH_CONFIG.clientId,
+            client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
+            refresh_token: refreshToken
+        })
     });
 
     if (!response.ok) {
