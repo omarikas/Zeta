@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Learner__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <inlineHelpText>The Salesforce user assigned this material.</inlineHelpText>
+    <label>Learner</label>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Learning Material Instances</relationshipLabel>
+    <relationshipName>Learning_Material_Instances</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

@@ -1,0 +1,178 @@
+<template>
+    <article class="mr-card">
+        <header class="mr-header">
+            <button type="button" class="mr-header-main" onclick={handleTogglePanel} aria-expanded={panelExpanded}>
+                <lightning-icon icon-name={panelToggleIcon} size="xx-small" class="mr-header-chevron"></lightning-icon>
+                <div class="mr-header-text">
+                    <h2 class="mr-title">Misr Radiology Center</h2>
+                    <p class="mr-subtitle">Sales &amp; commission</p>
+                </div>
+            </button>
+            <div class="mr-header-actions">
+                <template if:true={hasTimeCard}>
+                    <span class="mr-header-kpi">{totals.currentCommissionDisplay}</span>
+                </template>
+                <lightning-button-icon
+                    icon-name="utility:refresh"
+                    alternative-text="Refresh"
+                    title="Refresh"
+                    onclick={handleRefresh}
+                    disabled={isLoading}
+                    variant="bare"
+                ></lightning-button-icon>
+            </div>
+        </header>
+
+        <div class="mr-toolbar">
+            <div class="mr-month-nav">
+                <button
+                    type="button"
+                    class="mr-month-btn"
+                    onclick={handlePrevMonth}
+                    disabled={isPrevMonthDisabled}
+                    aria-label="Previous month"
+                >
+                    <lightning-icon icon-name="utility:chevronleft" size="xx-small"></lightning-icon>
+                </button>
+                <lightning-combobox
+                    variant="label-hidden"
+                    value={selectedMonth}
+                    options={monthOptions}
+                    onchange={handleMonthChange}
+                    dropdown-alignment="auto"
+                    class="mr-month-select"
+                ></lightning-combobox>
+                <button
+                    type="button"
+                    class="mr-month-btn"
+                    onclick={handleNextMonth}
+                    disabled={isNextMonthDisabled}
+                    aria-label="Next month"
+                >
+                    <lightning-icon icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                </button>
+            </div>
+            <template if:true={workingDaysLabel}>
+                <span class="mr-working-days">{workingDaysLabel}</span>
+            </template>
+        </div>
+
+        <template if:true={errorMessage}>
+            <div class="mr-alert mr-alert--error" role="alert">{errorMessage}</div>
+        </template>
+
+        <template if:true={isLoading}>
+            <div class="mr-loading">
+                <lightning-spinner alternative-text="Loading commission data" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={showEmptyState}>
+            <div class="mr-empty">
+                <p>No time card for this month.</p>
+            </div>
+        </template>
+
+        <template if:true={hasTimeCard}>
+            <div class="mr-summary">
+                <div class="mr-kpi">
+                    <span class="mr-kpi-label">Current</span>
+                    <span class="mr-kpi-value">{totals.currentCommissionDisplay}</span>
+                </div>
+                <div class="mr-kpi mr-kpi--accent">
+                    <span class="mr-kpi-label">Projected</span>
+                    <span class="mr-kpi-value">{totals.projectedCommissionDisplay}</span>
+                </div>
+                <div class="mr-kpi">
+                    <span class="mr-kpi-label">Sold / Target</span>
+                    <span class="mr-kpi-value mr-kpi-value--sm">{totals.soldDisplay} / {totals.targetDisplay}</span>
+                </div>
+                <div class="mr-kpi mr-kpi--bar">
+                    <span class="mr-kpi-label">{totals.achievementDisplay}</span>
+                    <div class="mr-mini-bar">
+                        <div class="mr-mini-bar-fill" style={totals.totalBarStyle}></div>
+                    </div>
+                </div>
+            </div>
+
+            <template if:true={panelExpanded}>
+                <div class="mr-body">
+                    <div class="mr-projection">
+                        <span class="mr-projection-text">{projectedRevenueShort}</span>
+                        <span class="mr-projection-payroll">{projectedCommissionPayrollLabel}</span>
+                    </div>
+
+                    <section class="mr-services-fold">
+                        <button
+                            type="button"
+                            class="mr-fold-trigger"
+                            onclick={handleToggleServices}
+                            aria-expanded={servicesExpanded}
+                        >
+                            <lightning-icon icon-name={servicesToggleIcon} size="xx-small"></lightning-icon>
+                            <span class="mr-fold-title">Commission sources</span>
+                            <span class="mr-fold-meta">{servicesToggleLabel}</span>
+                        </button>
+
+                        <template if:true={servicesExpanded}>
+                            <div class="mr-service-table" role="list">
+                                <template for:each={serviceRows} for:item="row">
+                                    <div key={row.rowKey} class={row.rowClass} role="listitem">
+                                        <button
+                                            type="button"
+                                            class="mr-row-trigger"
+                                            data-key={row.rowKey}
+                                            onclick={handleToggleServiceRow}
+                                            aria-expanded={row.isOpen}
+                                        >
+                                            <lightning-icon
+                                                icon-name="utility:chevronright"
+                                                size="xx-small"
+                                                class={row.chevronClass}
+                                            ></lightning-icon>
+                                            <span class="mr-row-name" title={row.label}>{row.label}</span>
+                                            <span class="mr-row-inline">
+                                                <span class="mr-row-sold">{row.inlineSummary}</span>
+                                                <div class="mr-row-bar">
+                                                    <div class="mr-row-bar-fill" style={row.barStyle}></div>
+                                                </div>
+                                                <span class="mr-row-pct">{row.achievementDisplay}</span>
+                                            </span>
+                                            <span class="mr-row-commission">{row.commissionDisplay}</span>
+                                            <span class={row.statusClass}>{row.statusLabel}</span>
+                                        </button>
+
+                                        <template if:true={row.isOpen}>
+                                            <div class="mr-row-detail">
+                                                <div class="mr-detail-cell">
+                                                    <span class="mr-detail-label">Sold</span>
+                                                    <span class="mr-detail-value">{row.soldDisplay}</span>
+                                                </div>
+                                                <div class="mr-detail-cell">
+                                                    <span class="mr-detail-label">Target</span>
+                                                    <span class="mr-detail-value">{row.targetDisplay}</span>
+                                                </div>
+                                                <div class="mr-detail-cell">
+                                                    <span class="mr-detail-label">Rate</span>
+                                                    <span class="mr-detail-value">{row.rateDisplay}</span>
+                                                </div>
+                                                <div class="mr-detail-cell">
+                                                    <span class="mr-detail-label">Projected</span>
+                                                    <span class="mr-detail-value">{row.projectedSoldDisplay}</span>
+                                                </div>
+                                                <div class="mr-detail-cell">
+                                                    <span class="mr-detail-label">Proj. comm.</span>
+                                                    <span class="mr-detail-value">{row.projectedCommissionDisplay}</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </section>
+                </div>
+            </template>
+        </template>
+    </article>
+</template>

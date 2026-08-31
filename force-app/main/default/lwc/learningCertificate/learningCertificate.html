@@ -1,0 +1,22 @@
+<template>
+    <section class="certificate-page">
+        <header class="certificate-actions">
+            <lightning-button label="Back to My Learning" onclick={handleBack}></lightning-button>
+            <lightning-button variant="brand" label="Print" onclick={handlePrint}></lightning-button>
+        </header>
+
+        <template if:true={loading}>
+            <lightning-spinner alternative-text="Loading certificate" size="small"></lightning-spinner>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="error">{errorMessage}</div>
+        </template>
+
+        <template if:true={certificate}>
+            <div class="certificate-shell">
+                <div class="certificate-html" lwc:dom="manual"></div>
+            </div>
+        </template>
+    </section>
+</template>

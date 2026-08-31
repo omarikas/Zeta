@@ -1,0 +1,8 @@
+<template>
+    <template if:true={showStatus}>
+        <div class="prefetch-status" role="status" aria-live="polite">
+            <lightning-icon icon-name="utility:download" size="xx-small" class="prefetch-icon"></lightning-icon>
+            <span>{displayLabel}</span>
+        </div>
+    </template>
+</template>

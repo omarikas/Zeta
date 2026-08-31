@@ -1,0 +1,125 @@
+<template>
+    <section class="ech-root">
+        <div class="ech-heading-row">
+            <div>
+                <h3 class="ech-title">Egypt Coverage Map</h3>
+                <p class="ech-caption">
+                    Governorate heat map — visit coverage vs sell-out intensity
+                    <template if:true={monthLabel}> · {monthLabel} MTD</template>
+                </p>
+            </div>
+            <div class="ech-summary-badges">
+                <span class="ech-badge">Coverage {nationalCoverageDisplay}</span>
+                <span class="ech-badge">Sell-out {nationalSalesDisplay}</span>
+                <span class="ech-badge">{nationalVisitsDisplay} visits</span>
+            </div>
+        </div>
+
+        <div class="ech-metric-row">
+            <template for:each={metricOptions} for:item="metric">
+                <button
+                    key={metric.key}
+                    type="button"
+                    class={metric.buttonClass}
+                    data-metric={metric.key}
+                    onclick={handleMetricClick}
+                >
+                    {metric.label}
+                </button>
+            </template>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="ech-loading">
+                <lightning-spinner alternative-text="Loading Egypt coverage map" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={errorMessage}>
+            <p class="ech-error">{errorMessage}</p>
+        </template>
+
+        <template if:false={isLoading}>
+            <div class="ech-map-card">
+                <div class="ech-map-shell">
+                    <svg class="ech-map" viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Egypt governorate coverage heat map">
+                        <template for:each={mapPaths} for:item="region">
+                            <path
+                                key={region.key}
+                                class={region.pathClass}
+                                d={region.d}
+                                fill={region.fill}
+                                data-key={region.key}
+                                aria-label={region.ariaLabel}
+                                onmouseenter={handleRegionEnter}
+                                onmousemove={handleRegionMove}
+                                onmouseleave={handleRegionLeave}
+                                onclick={handleRegionClick}
+                            ></path>
+                        </template>
+                    </svg>
+
+                    <template if:true={showTooltip}>
+                        <div class="ech-tooltip" style={tooltipStyle} role="tooltip">
+                            <div class="ech-tooltip-head">{hoveredRow.governorateLabel}</div>
+                            <div class="ech-tooltip-row">
+                                <span>Coverage</span>
+                                <strong>{hoveredRow.coverageDisplay}</strong>
+                            </div>
+                            <div class="ech-tooltip-row">
+                                <span>Sell-out</span>
+                                <strong>{hoveredRow.salesDisplay}</strong>
+                            </div>
+                            <div class="ech-tooltip-row">
+                                <span>Visits</span>
+                                <strong>{hoveredRow.visitCount}</strong>
+                            </div>
+                            <div class="ech-tooltip-row">
+                                <span>Gap</span>
+                                <strong class={hoveredRow.gapClass}>{hoveredRow.gapDisplay}</strong>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="ech-legend">
+                    <span class="ech-legend-label">{legendLowLabel}</span>
+                    <div class="ech-legend-gradient"></div>
+                    <span class="ech-legend-label">{legendHighLabel}</span>
+                </div>
+            </div>
+
+            <template if:true={selectedRow}>
+                <article class="ech-detail">
+                    <header class="ech-detail-head">
+                        <div>
+                            <h4 class="ech-detail-title">{selectedRow.governorateLabel}</h4>
+                            <p class="ech-detail-sub">
+                                {selectedRow.coverageDisplay} coverage · {selectedRow.salesDisplay} sell-out ·
+                                {selectedRow.visitCount} visits · gap {selectedRow.gapDisplay}
+                            </p>
+                        </div>
+                        <button type="button" class="ech-detail-close" onclick={handleCloseDetail} aria-label="Close detail">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </header>
+                    <template if:true={hasSelectedTopBricks}>
+                        <ul class="ech-brick-list">
+                            <template for:each={selectedRow.topBricks} for:item="brick">
+                                <li key={brick.key} class="ech-brick-row">
+                                    <span class="ech-brick-name">{brick.brickName}</span>
+                                    <span class="ech-brick-sales">{brick.salesDisplay}</span>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                    <template if:false={hasSelectedTopBricks}>
+                        <p class="ech-detail-empty">No brick-level sell-out in scope for this governorate.</p>
+                    </template>
+                </article>
+            </template>
+        </template>
+
+        <div class="ech-aria-live" aria-live="polite">{ariaLiveMessage}</div>
+    </section>
+</template>

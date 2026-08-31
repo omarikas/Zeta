@@ -1,0 +1,45 @@
+<template>
+    <template if:true={hasRecord}>
+        <section class={headerShellClass} style={headerStyle}>
+            <div class="proj-header-glow" aria-hidden="true"></div>
+            <div class="proj-header-main">
+                <div class={typeIconClass} aria-hidden="true">
+                    <lightning-icon icon-name={typeIconName} size="large"></lightning-icon>
+                </div>
+                <div class="proj-header-copy">
+                    <p class="proj-header-eyebrow">{projectType}</p>
+                    <h1 class="proj-header-title">{projectName}</h1>
+                    <div class="proj-header-meta">
+                        <span class={statusClass}>{status}</span>
+                        <span class="proj-header-bu">{businessUnit}</span>
+                        <template if:true={campaignType}>
+                            <span class="proj-header-campaign">{campaignType}</span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="proj-header-details">
+                <template if:true={showProjectLead}>
+                    <div class="proj-header-detail">
+                        <span class="proj-header-label">Project lead</span>
+                        <span class="proj-header-value">{projectLead}</span>
+                    </div>
+                </template>
+                <div class="proj-header-detail proj-header-detail--timeline">
+                    <div class="proj-header-detail-top">
+                        <span class="proj-header-label">Timeline</span>
+                        <span class="proj-header-value">{startDateDisplay} – {endDateDisplay}</span>
+                    </div>
+                    <div class="proj-header-track">
+                        <div class="proj-header-fill" style={timelineProgressStyle}></div>
+                    </div>
+                    <p class="proj-header-caption">{dateRangeCaption}</p>
+                </div>
+            </div>
+        </section>
+    </template>
+    <template if:true={error}>
+        <p class="slds-text-color_error slds-p-around_small">{error}</p>
+    </template>
+</template>

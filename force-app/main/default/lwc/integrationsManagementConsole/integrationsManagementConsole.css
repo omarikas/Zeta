@@ -1,0 +1,183 @@
+:host {
+    display: block;
+}
+
+.integrations-console {
+    --int-border: #e5e7eb;
+    --int-muted: #5f6368;
+    --int-title: #1f2937;
+    --int-brand: #0176d3;
+}
+
+.integrations-header {
+    margin-bottom: 1.5rem;
+}
+
+.integrations-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--int-title);
+    margin: 0;
+}
+
+.integrations-subtitle {
+    font-size: 0.875rem;
+    color: var(--int-muted);
+    margin: 0.375rem 0 0;
+    max-width: 52rem;
+}
+
+.integrations-section + .integrations-section {
+    margin-top: 1.75rem;
+}
+
+.section-label {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--int-title);
+    margin: 0 0 0.75rem;
+}
+
+.section-hint {
+    font-size: 0.8125rem;
+    color: var(--int-muted);
+    margin: -0.375rem 0 0.75rem;
+}
+
+.integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.integrations-grid--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+    .integrations-grid,
+    .integrations-grid--compact {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.integration-card {
+    border: 1px solid var(--int-border);
+    border-radius: 12px;
+    padding: 1rem 1.125rem;
+    background: #ffffff;
+}
+
+.integration-card--compact {
+    padding: 0.875rem 1rem;
+}
+
+.integration-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.625rem;
+}
+
+.integration-icon-panel {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #eaf3fb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.integration-icon-panel--compact {
+    width: 36px;
+    height: 36px;
+}
+
+.integration-icon-panel lightning-icon {
+    --slds-c-icon-color-foreground-default: var(--int-brand);
+}
+
+.integration-logo {
+    max-width: 36px;
+    max-height: 28px;
+    object-fit: contain;
+}
+
+.integration-category {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--int-brand);
+    margin: 0 0 0.25rem;
+}
+
+.integration-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--int-title);
+    margin: 0 0 0.375rem;
+}
+
+.integration-desc {
+    font-size: 0.8125rem;
+    color: var(--int-muted);
+    margin: 0 0 0.75rem;
+    line-height: 1.45;
+}
+
+.integration-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-top: 0.625rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.integration-sync-label {
+    color: var(--int-muted);
+}
+
+.integration-sync-value {
+    font-weight: 600;
+    color: var(--int-title);
+}
+
+.integration-action {
+    margin-top: 0.25rem;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-pill--connected {
+    background: #e8f5e9;
+    color: #2e844a;
+}
+
+.status-pill--configured {
+    background: #eaf3fb;
+    color: #0176d3;
+}
+
+.status-pill--pending {
+    background: #fff4e5;
+    color: #dd7a01;
+}
+
+.status-pill--planned {
+    background: #f3f4f6;
+    color: #6b7280;
+}

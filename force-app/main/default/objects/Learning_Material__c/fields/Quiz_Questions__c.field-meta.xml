@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Quiz_Questions__c</fullName>
+    <description>Stores MCQ questions and correct answers in JSON format. Format: {&quot;version&quot;: &quot;1.0&quot;, &quot;totalQuestions&quot;: 10, &quot;totalPoints&quot;: 10, &quot;questions&quot;: [{&quot;id&quot;: &quot;q1&quot;, &quot;question&quot;: &quot;...&quot;, &quot;type&quot;: &quot;single-choice&quot;, &quot;options&quot;: [...], &quot;correctAnswer&quot;: 0, &quot;points&quot;: 1, &quot;explanation&quot;: &quot;...&quot;}]}</description>
+    <inlineHelpText>JSON format containing all quiz questions, options, and correct answers. Required when Material Type is Quiz.</inlineHelpText>
+    <label>Quiz Questions (JSON)</label>
+    <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>10</visibleLines>
+</CustomField>

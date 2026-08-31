@@ -1,0 +1,205 @@
+<template>
+    <div class="visit-workspace">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading visit" size="medium"></lightning-spinner>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="slds-p-around_medium slds-text-color_error">{errorMessage}</div>
+        </template>
+
+        <template if:true={visit}>
+            <section class="visit-hero">
+                <div class="visit-hero-top">
+                    <span class={accountBadgeClass}>{accountBadgeLabel}</span>
+                    <span class={statusBadgeClass}>{visit.status}</span>
+                </div>
+                <h1 class="visit-account-name">{visit.accountName}</h1>
+                <template if:true={accountMetaLine}>
+                    <p class="visit-account-meta">{accountMetaLine}</p>
+                </template>
+                <div class="visit-hero-actions">
+                    <lightning-button
+                        label="View Account"
+                        icon-name="utility:account"
+                        onclick={handleOpenAccount}
+                    ></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_x-small"
+                        label="Field Planner"
+                        icon-name="utility:event"
+                        onclick={handleOpenPlanner}
+                    ></lightning-button>
+                </div>
+            </section>
+
+            <section class="visit-path slds-m-bottom_medium">
+                <template for:each={pathSteps} for:item="step">
+                    <div key={step.key} class={step.stepClass}>
+                        <span class="path-step-label">{step.label}</span>
+                    </div>
+                </template>
+            </section>
+
+            <div class="visit-layout">
+                <nav class="visit-nav" aria-label="Visit sections">
+                    <template for:each={navItems} for:item="item">
+                        <button
+                            key={item.key}
+                            class={item.className}
+                            data-key={item.key}
+                            onclick={handleNavClick}
+                        >
+                            {item.label}
+                        </button>
+                    </template>
+                </nav>
+
+                <div class="visit-content">
+                    <template if:true={showDetails}>
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <article class="visit-panel">
+                                    <h2 class="visit-panel-title">Visit Details</h2>
+                                    <dl class="visit-detail-list">
+                                        <div class="visit-detail-row">
+                                            <dt>Visit</dt>
+                                            <dd>{visit.name}</dd>
+                                        </div>
+                                        <div class="visit-detail-row">
+                                            <dt>Start</dt>
+                                            <dd>{startLabel}</dd>
+                                        </div>
+                                        <div class="visit-detail-row">
+                                            <dt>End</dt>
+                                            <dd>{endLabel}</dd>
+                                        </div>
+                                        <div class="visit-detail-row">
+                                            <dt>Duration</dt>
+                                            <dd>{visit.durationLabel}</dd>
+                                        </div>
+                                        <div class="visit-detail-row">
+                                            <dt>Visit Type</dt>
+                                            <dd>{visit.visitType}</dd>
+                                        </div>
+                                        <div class="visit-detail-row">
+                                            <dt>Assigned To</dt>
+                                            <dd>{visit.assignedToName}</dd>
+                                        </div>
+                                    </dl>
+                                    <template if:true={planRejectionReason}>
+                                        <div class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_small" role="alert">
+                                            <h2>Plan rejected</h2>
+                                            <p>{planRejectionReason}</p>
+                                        </div>
+                                    </template>
+                                    <template if:true={isPendingApproval}>
+                                        <div class="slds-notify slds-notify_alert slds-theme_info slds-m-bottom_small" role="status">
+                                            Pending manager approval — this visit is read-only until approved or rejected.
+                                        </div>
+                                    </template>
+                                    <lightning-combobox
+                                        class="slds-m-top_small"
+                                        label="Status"
+                                        value={statusValue}
+                                        options={statusOptions}
+                                        onchange={handleStatusChange}
+                                        disabled={isLocked}
+                                        required
+                                    ></lightning-combobox>
+                                    <template if:true={showCancellationReason}>
+                                        <lightning-textarea
+                                            class="slds-m-top_small"
+                                            label="Cancellation Reason"
+                                            value={cancellationReason}
+                                            onchange={handleCancellationChange}
+                                            disabled={isLocked}
+                                            required
+                                        ></lightning-textarea>
+                                    </template>
+                                </article>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <article class="visit-panel">
+                                    <h2 class="visit-panel-title">Call Planning &amp; Reporting</h2>
+                                    <p class="visit-panel-subtitle">
+                                        Capture your call objective, products discussed, and follow-up. Use the
+                                        Presentations tab to launch CLM content.
+                                    </p>
+                                    <lightning-textarea
+                                        label="Visit Objective"
+                                        value={visitObjective}
+                                        onchange={handleObjectiveChange}
+                                        disabled={isLocked}
+                                        placeholder="What do you want to achieve on this call?"
+                                    ></lightning-textarea>
+                                    <lightning-dual-listbox
+                                        class="slds-m-top_small"
+                                        label="Products Discussed"
+                                        source-label="Available Products"
+                                        selected-label="Discussed on Call"
+                                        options={productOptions}
+                                        value={selectedProducts}
+                                        onchange={handleProductsChange}
+                                        disabled={isLocked}
+                                        size="4"
+                                    ></lightning-dual-listbox>
+                                    <lightning-textarea
+                                        class="slds-m-top_small"
+                                        label="Product Details"
+                                        value={productDetails}
+                                        onchange={handleProductDetailsChange}
+                                        disabled={isLocked}
+                                        placeholder="Indications, key messages, objections, and sample details."
+                                    ></lightning-textarea>
+                                    <lightning-textarea
+                                        class="slds-m-top_small"
+                                        label="Visit Notes"
+                                        value={visitNotes}
+                                        onchange={handleNotesChange}
+                                        disabled={isLocked}
+                                        placeholder="Key discussion points and outcomes."
+                                    ></lightning-textarea>
+                                    <lightning-input
+                                        class="slds-m-top_small"
+                                        type="date"
+                                        label="Next Visit Date"
+                                        value={nextVisitDate}
+                                        onchange={handleNextVisitChange}
+                                        disabled={isLocked}
+                                    ></lightning-input>
+                                </article>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template if:true={showPresentations}>
+                        <c-clm-visit-presentations record-id={recordId} is-locked={isLocked}></c-clm-visit-presentations>
+                    </template>
+
+                    <template if:true={showPlaceholderTab}>
+                        <article class="visit-panel placeholder-panel">
+                            <h2 class="visit-panel-title">{placeholderLabel}</h2>
+                            <p class="visit-panel-subtitle">This section is reserved for a future IMP release.</p>
+                        </article>
+                    </template>
+                </div>
+            </div>
+
+            <footer class="visit-footer">
+                <template if:false={isLocked}>
+                    <lightning-button
+                        label="Save Visit"
+                        variant="brand"
+                        onclick={handleSave}
+                        disabled={isSaving}
+                    ></lightning-button>
+                </template>
+                <template if:true={isLocked}>
+                    <p class="visit-locked-note">This visit is {visit.status} and cannot be edited.</p>
+                </template>
+            </footer>
+        </template>
+    </div>
+</template>

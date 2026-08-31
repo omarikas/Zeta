@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Specialty_3__c</fullName>
+    <description>HCP specialty 3 (Medical Specialty global picklist).</description>
+    <label>Specialty 3</label>
+    <required>false</required>
+    <trackFeedHistory>false</trackFeedHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetName>Medical_Specialty</valueSetName>
+    </valueSet>
+</CustomField>

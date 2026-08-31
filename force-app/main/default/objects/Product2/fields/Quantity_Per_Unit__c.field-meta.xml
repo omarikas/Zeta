@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Quantity_Per_Unit__c</fullName>
+    <description>Numeric strength/amount per dosage unit (e.g. 20 for 20 mg). Required on Detail and Sample.</description>
+    <externalId>false</externalId>
+    <label>Quantity Per Unit</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>4</scale>
+    <trackHistory>false</trackHistory>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

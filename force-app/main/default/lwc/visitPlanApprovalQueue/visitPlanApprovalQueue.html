@@ -1,0 +1,46 @@
+<template>
+    <section class="queue-card">
+        <header class="queue-header">
+            <h2 class="queue-title">Visit plans awaiting approval</h2>
+            <p class="queue-subtitle">Approve or reject submitted visits from your direct reports.</p>
+        </header>
+        <template if:true={hasRows}>
+            <template for:each={rows} for:item="row">
+                <article key={row.visitId} class="queue-row">
+                    <div class="queue-row-main">
+                        <p class="queue-row-title">{row.visitName}</p>
+                        <p class="queue-row-meta">
+                            {row.repName} · {row.accountName} · {row.startLabel}
+                        </p>
+                    </div>
+                    <div class="queue-row-actions">
+                        <lightning-textarea
+                            label="Rejection reason"
+                            variant="label-hidden"
+                            placeholder="Required to reject"
+                            data-visit-id={row.visitId}
+                            onchange={handleRejectionChange}
+                        ></lightning-textarea>
+                        <div class="queue-buttons">
+                            <lightning-button
+                                label="Approve"
+                                variant="brand"
+                                data-visit-id={row.visitId}
+                                onclick={handleApprove}
+                            ></lightning-button>
+                            <lightning-button
+                                label="Reject"
+                                variant="destructive"
+                                data-visit-id={row.visitId}
+                                onclick={handleReject}
+                            ></lightning-button>
+                        </div>
+                    </div>
+                </article>
+            </template>
+        </template>
+        <template if:false={hasRows}>
+            <p class="queue-empty">No submitted visit plans right now.</p>
+        </template>
+    </section>
+</template>

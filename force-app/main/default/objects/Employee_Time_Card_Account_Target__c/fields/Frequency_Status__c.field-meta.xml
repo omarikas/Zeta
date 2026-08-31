@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Frequency_Status__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+  Actual_Visits__c &gt; Target_Visit_Frequency__c,
+  &quot;MCF&quot;,
+  IF(
+    OR(
+      Actual_Visits__c = Target_Visit_Frequency__c,
+      AND(Target_Visit_Frequency__c = 0, Actual_Visits__c &gt; 0)
+    ),
+    &quot;RCF&quot;,
+    &quot;LCF&quot;
+  )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Frequency Status</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

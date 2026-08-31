@@ -1,0 +1,464 @@
+<template>
+    <div class="quiz-editor-canvas">
+        <!-- Sticky Header -->
+        <div class="quiz-editor-header">
+            <div class="quiz-editor-header-inner">
+                <div class="header-title">
+                    <lightning-icon icon-name="standard:question_mark" size="small" class="slds-m-right_x-small"></lightning-icon>
+                    <span class="slds-text-heading_small">Coaching Template Configuration</span>
+                </div>
+                <div class="header-stats">
+                    <span class="stat-pill">
+                        <span class="stat-value">{totalQuestions}</span>
+                        <span class="stat-label">Questions</span>
+                    </span>
+                    <span class="stat-pill">
+                        <span class="stat-value">{totalPoints}</span>
+                        <span class="stat-label">Points</span>
+                    </span>
+                </div>
+                <div class="header-actions">
+                    <lightning-button
+                        label={jsonEditorLabel}
+                        onclick={toggleJsonEditor}
+                        variant="neutral"
+                        class="slds-m-right_x-small">
+                    </lightning-button>
+                    <lightning-button
+                        label="Save"
+                        variant="brand"
+                        onclick={handleSave}
+                        disabled={isLoading}>
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Column -->
+        <div class="quiz-editor-body">
+            <!-- JSON Editor -->
+            <template if:true={showJsonEditor}>
+                <div class="form-column">
+                    <div class="slds-box slds-theme_shade json-editor-panel">
+                        <div class="slds-text-heading_small slds-m-bottom_small">JSON Editor</div>
+                        <template if:false={isValidJson}>
+                            <div class="slds-text-color_error slds-m-bottom_small json-error">
+                                <lightning-icon icon-name="utility:error" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                {jsonError}
+                            </div>
+                        </template>
+                        <lightning-textarea
+                            label="Questions JSON"
+                            value={jsonText}
+                            onchange={handleJsonChange}
+                            rows="20">
+                        </lightning-textarea>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Visual Editor -->
+            <template if:false={showJsonEditor}>
+                <div class="form-column">
+                    <template if:true={hasQuestions}>
+                        <template for:each={questions} for:item="question" for:index="index">
+                            <article key={question.id} class={question.wrapperClass}>
+                                <div class="question-card">
+                                    <!-- Card Header -->
+                                    <div class="card-header">
+                                        <div class="card-header-left">
+                                            <div class="reorder-buttons">
+                                                <lightning-button-icon
+                                                    icon-name="utility:up"
+                                                    alternative-text="Move up"
+                                                    data-index={index}
+                                                    onclick={handleMoveQuestion}
+                                                    data-direction="up"
+                                                    disabled={question.canMoveUp}
+                                                    variant="bare"
+                                                    size="small">
+                                                </lightning-button-icon>
+                                                <lightning-button-icon
+                                                    icon-name="utility:down"
+                                                    alternative-text="Move down"
+                                                    data-index={index}
+                                                    onclick={handleMoveQuestion}
+                                                    data-direction="down"
+                                                    disabled={question.canMoveDown}
+                                                    variant="bare"
+                                                    size="small">
+                                                </lightning-button-icon>
+                                            </div>
+                                            <span class="question-number">Q{question.displayNumber}</span>
+                                        </div>
+                                        <lightning-button-menu
+                                            alternative-text="Question actions"
+                                            icon-size="x-small"
+                                            menu-alignment="right"
+                                            data-index={index}
+                                            onselect={handleQuestionMenuSelect}>
+                                            <lightning-menu-item
+                                                label="Duplicate"
+                                                value="duplicate">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                label="Delete"
+                                                value="delete">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
+                                    </div>
+
+                                    <!-- Question Text -->
+                                    <div class="question-text-area">
+                                        <lightning-textarea
+                                            value={question.question}
+                                            data-index={index}
+                                            data-field="question"
+                                            onchange={handleQuestionChange}
+                                            placeholder="Question"
+                                            rows="2"
+                                            variant="label-hidden">
+                                        </lightning-textarea>
+                                    </div>
+
+                                    <!-- Section + Respondent -->
+                                    <div class="slds-grid slds-gutters slds-m-bottom_small meta-row">
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <lightning-combobox
+                                                label="Section"
+                                                value={question.section}
+                                                options={sectionOptions}
+                                                data-index={index}
+                                                data-field="section"
+                                                onchange={handleQuestionChange}>
+                                            </lightning-combobox>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <lightning-combobox
+                                                label="Respondent"
+                                                value={question.respondent}
+                                                options={respondentOptions}
+                                                data-index={index}
+                                                data-field="respondent"
+                                                onchange={handleQuestionChange}>
+                                            </lightning-combobox>
+                                        </div>
+                                    </div>
+
+                                    <!-- Type + Points -->
+                                    <div class="slds-grid slds-gutters slds-m-bottom_medium meta-row">
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <lightning-combobox
+                                                label="Question type"
+                                                value={question.type}
+                                                options={questionTypeOptions}
+                                                data-index={index}
+                                                data-field="type"
+                                                onchange={handleQuestionChange}>
+                                            </lightning-combobox>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <lightning-input
+                                                type="number"
+                                                label="Points"
+                                                value={question.points}
+                                                data-index={index}
+                                                data-field="points"
+                                                onchange={handleQuestionChange}
+                                                min="1"
+                                                step="1">
+                                            </lightning-input>
+                                        </div>
+                                    </div>
+
+                                    <!-- Choice Editor -->
+                                    <template if:true={question.isChoice}>
+                                        <div class="options-editor">
+                                            <template for:each={question.options} for:item="option" for:index="optIndex">
+                                                <div key={option.key} class="option-row">
+                                                    <div class="option-marker">
+                                                        <template if:true={question.isSingleChoice}>
+                                                            <input
+                                                                type="radio"
+                                                                name={question.id}
+                                                                checked={option.isCorrect}
+                                                                data-index={index}
+                                                                data-optionindex={optIndex}
+                                                                onclick={handleSetCorrectAnswer}
+                                                                title="Mark as correct answer" />
+                                                        </template>
+                                                        <template if:true={question.isMultipleChoice}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={option.isCorrect}
+                                                                data-index={index}
+                                                                data-optionindex={optIndex}
+                                                                onclick={handleToggleCorrectAnswer}
+                                                                title="Mark as correct answer" />
+                                                        </template>
+                                                    </div>
+                                                    <div class="option-input">
+                                                        <lightning-input
+                                                            type="text"
+                                                            value={option.value}
+                                                            data-index={index}
+                                                            data-field="options"
+                                                            data-optionindex={optIndex}
+                                                            onchange={handleQuestionChange}
+                                                            placeholder="Option"
+                                                            variant="label-hidden">
+                                                        </lightning-input>
+                                                    </div>
+                                                    <lightning-button-icon
+                                                        icon-name="utility:close"
+                                                        alternative-text="Remove option"
+                                                        data-index={index}
+                                                        data-optionindex={optIndex}
+                                                        onclick={handleRemoveOption}
+                                                        variant="bare"
+                                                        class="option-remove">
+                                                    </lightning-button-icon>
+                                                </div>
+                                            </template>
+                                            <lightning-button
+                                                label="Add option"
+                                                icon-name="utility:add"
+                                                onclick={handleAddOption}
+                                                data-index={index}
+                                                variant="neutral"
+                                                class="slds-m-top_x-small add-option-btn">
+                                            </lightning-button>
+                                        </div>
+
+                                        <!-- Choice Preview -->
+                                        <div class="preview-strip">
+                                            <div class="preview-label">Preview</div>
+                                            <div class="preview-content">
+                                                <p class="preview-question">{question.question}</p>
+                                                <template for:each={question.options} for:item="option" for:index="optIndex">
+                                                    <div key={option.key} class="preview-option">
+                                                        <template if:true={question.isSingleChoice}>
+                                                            <span class="preview-radio"></span>
+                                                        </template>
+                                                        <template if:true={question.isMultipleChoice}>
+                                                            <span class="preview-checkbox"></span>
+                                                        </template>
+                                                        <span class="preview-option-text">{option.value}</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Scale Editor -->
+                                    <template if:true={question.isScale}>
+                                        <div class="scale-editor">
+                                            <div class="slds-grid slds-gutters slds-m-bottom_small">
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <lightning-input
+                                                        type="number"
+                                                        label="Lowest value"
+                                                        value={question.scaleMin}
+                                                        data-index={index}
+                                                        data-field="scaleMin"
+                                                        onchange={handleQuestionChange}
+                                                        min="0"
+                                                        max="9"
+                                                        step="1">
+                                                    </lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <lightning-input
+                                                        type="number"
+                                                        label="Highest value"
+                                                        value={question.scaleMax}
+                                                        data-index={index}
+                                                        data-field="scaleMax"
+                                                        onchange={handleQuestionChange}
+                                                        min="1"
+                                                        max="10"
+                                                        step="1">
+                                                    </lightning-input>
+                                                </div>
+                                            </div>
+                                            <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <lightning-input
+                                                        type="text"
+                                                        label="Label for lowest value"
+                                                        value={question.scaleMinLabel}
+                                                        data-index={index}
+                                                        data-field="scaleMinLabel"
+                                                        onchange={handleQuestionChange}
+                                                        placeholder="e.g. Not at all">
+                                                    </lightning-input>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <lightning-input
+                                                        type="text"
+                                                        label="Label for highest value"
+                                                        value={question.scaleMaxLabel}
+                                                        data-index={index}
+                                                        data-field="scaleMaxLabel"
+                                                        onchange={handleQuestionChange}
+                                                        placeholder="e.g. Very much">
+                                                    </lightning-input>
+                                                </div>
+                                            </div>
+
+                                            <div class="weight-table-wrapper">
+                                                <table class="slds-table slds-table_cell-buffer slds-table_bordered weight-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col">Value</th>
+                                                            <th scope="col">Label</th>
+                                                            <th scope="col">Weight (pts)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <template for:each={question.scalePoints} for:item="point" for:index="pointIndex">
+                                                            <tr key={point.key}>
+                                                                <td>{point.value}</td>
+                                                                <td>
+                                                                    <lightning-input
+                                                                        type="text"
+                                                                        value={point.label}
+                                                                        data-index={index}
+                                                                        data-field="scaleLabel"
+                                                                        data-pointindex={pointIndex}
+                                                                        onchange={handleQuestionChange}
+                                                                        variant="label-hidden">
+                                                                    </lightning-input>
+                                                                </td>
+                                                                <td>
+                                                                    <lightning-input
+                                                                        type="number"
+                                                                        value={point.weight}
+                                                                        data-index={index}
+                                                                        data-field="scaleWeight"
+                                                                        data-pointindex={pointIndex}
+                                                                        onchange={handleQuestionChange}
+                                                                        min="0"
+                                                                        max={question.points}
+                                                                        step="1"
+                                                                        variant="label-hidden">
+                                                                    </lightning-input>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <!-- Scale Preview -->
+                                        <div class="preview-strip">
+                                            <div class="preview-label">Preview</div>
+                                            <div class="preview-content">
+                                                <p class="preview-question">{question.question}</p>
+                                                <div class="scale-preview">
+                                                    <div class="scale-preview-labels">
+                                                        <span class="scale-end-label">{question.scaleMinLabel}</span>
+                                                        <span class="scale-end-label scale-end-label-right">{question.scaleMaxLabel}</span>
+                                                    </div>
+                                                    <div class="scale-preview-points">
+                                                        <template for:each={question.scalePoints} for:item="point">
+                                                            <div key={point.key} class="scale-preview-point">
+                                                                <span class="scale-circle">{point.value}</span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Explanation -->
+                                    <div class="slds-m-top_medium">
+                                        <lightning-textarea
+                                            label="Explanation (optional)"
+                                            value={question.explanation}
+                                            data-index={index}
+                                            data-field="explanation"
+                                            onchange={handleQuestionChange}
+                                            rows="2"
+                                            placeholder="Shown after the learner answers">
+                                        </lightning-textarea>
+                                    </div>
+
+                                    <!-- Advanced -->
+                                    <div class="advanced-section">
+                                        <button
+                                            type="button"
+                                            class="advanced-toggle"
+                                            data-index={index}
+                                            onclick={handleToggleAdvanced}>
+                                            <lightning-icon
+                                                icon-name={question.showAdvancedIcon}
+                                                size="x-small"
+                                                class="slds-m-right_x-small">
+                                            </lightning-icon>
+                                            Advanced
+                                        </button>
+                                        <template if:true={question.showAdvanced}>
+                                            <div class="advanced-content">
+                                                <lightning-input
+                                                    type="text"
+                                                    label="Question ID"
+                                                    value={question.id}
+                                                    data-index={index}
+                                                    data-field="id"
+                                                    onchange={handleQuestionChange}>
+                                                </lightning-input>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </article>
+                        </template>
+                    </template>
+
+                    <!-- Empty State -->
+                    <template if:false={hasQuestions}>
+                        <div class="empty-state">
+                            <lightning-icon icon-name="standard:question_mark" size="large" class="empty-icon"></lightning-icon>
+                            <p class="slds-text-heading_small slds-m-top_medium">No questions yet</p>
+                            <p class="slds-text-body_regular slds-m-top_x-small slds-m-bottom_medium">
+                                Build your coaching template — add competencies below.
+                            </p>
+                            <lightning-button
+                                label="Add your first question"
+                                variant="brand"
+                                data-type="scale"
+                                onclick={handleAddQuestion}>
+                            </lightning-button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <!-- Sticky Footer -->
+        <template if:false={showJsonEditor}>
+            <div class="quiz-editor-footer">
+                <div class="quiz-editor-footer-inner">
+                    <lightning-button-menu
+                        label="Add question"
+                        icon-name="utility:add"
+                        alternative-text="Add question"
+                        onselect={handleAddQuestionMenuSelect}
+                        menu-alignment="center"
+                        variant="brand">
+                        <template for:each={addQuestionMenuItems} for:item="item">
+                            <lightning-menu-item
+                                key={item.value}
+                                label={item.label}
+                                value={item.value}>
+                            </lightning-menu-item>
+                        </template>
+                    </lightning-button-menu>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

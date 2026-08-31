@@ -1,0 +1,193 @@
+:host {
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.proj-header {
+    --proj-accent: #0176d3;
+    --proj-accent-soft: #0176d322;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 42%, #0f2744 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem 1.375rem;
+    color: #f8fafc;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.proj-header-glow {
+    position: absolute;
+    top: -3rem;
+    right: -2rem;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--proj-accent-soft) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.proj-header-main {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.proj-header-type-icon {
+    flex-shrink: 0;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.proj-type-icon--campaign lightning-icon {
+    --slds-c-icon-color-foreground-default: #93c5fd;
+}
+
+.proj-type-icon--evaluation lightning-icon {
+    --slds-c-icon-color-foreground-default: #c4b5fd;
+}
+
+.proj-type-icon--default lightning-icon {
+    --slds-c-icon-color-foreground-default: #7dd3fc;
+}
+
+.proj-header-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.proj-header-eyebrow {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(248, 250, 252, 0.72);
+}
+
+.proj-header-title {
+    margin: 0.2rem 0 0.625rem;
+    font-size: 1.625rem;
+    line-height: 1.15;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.proj-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.proj-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.proj-status--planning {
+    background: rgba(148, 163, 184, 0.22);
+    color: #e2e8f0;
+}
+
+.proj-status--progress {
+    background: rgba(59, 130, 246, 0.24);
+    color: #bfdbfe;
+}
+
+.proj-status--completed {
+    background: rgba(34, 197, 94, 0.22);
+    color: #bbf7d0;
+}
+
+.proj-status--hold {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fde68a;
+}
+
+.proj-header-bu,
+.proj-header-campaign {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.proj-header-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.125rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.proj-header-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(248, 250, 252, 0.62);
+}
+
+.proj-header-value {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.proj-header-detail-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.proj-header-track {
+    height: 0.55rem;
+    margin-top: 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.proj-header-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--proj-accent), #ffffff);
+    box-shadow: 0 0 12px var(--proj-accent-soft);
+}
+
+.proj-header-caption {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: rgba(248, 250, 252, 0.68);
+}
+
+@media (min-width: 768px) {
+    .proj-header-details {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Primary_Account__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <label>Primary Account</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Affiliations (Primary)</relationshipLabel>
+    <relationshipName>Affiliations_Primary</relationshipName>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

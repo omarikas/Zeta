@@ -1,0 +1,77 @@
+<template>
+    <section class="reports-hub">
+        <header class="reports-hub-header">
+            <div class="reports-hub-header-icon" aria-hidden="true">
+                <lightning-icon icon-name="utility:report" size="small"></lightning-icon>
+            </div>
+            <div class="reports-hub-header-text">
+                <h1 class="reports-hub-header-title">Reports &amp; Analytics</h1>
+                <p class="reports-hub-header-subtitle">
+                    Open working-days analysis and Medical Rep 360 insights.
+                </p>
+            </div>
+        </header>
+
+        <div class="reports-hub-body">
+            <div class="reports-hub-search">
+                <lightning-input
+                    type="search"
+                    variant="label-hidden"
+                    label="Search reports"
+                    placeholder="Search reports..."
+                    value={searchTerm}
+                    onchange={handleSearch}
+                ></lightning-input>
+            </div>
+
+            <div class="reports-hub-section-header">
+                <span class="reports-hub-section-chevron" aria-hidden="true">
+                    <lightning-icon icon-name="utility:chevrondown" size="x-small"></lightning-icon>
+                </span>
+                <span class="reports-hub-section-label">Analytics</span>
+                <span class="reports-hub-section-count">{moduleCount} items</span>
+            </div>
+
+            <template if:true={targetsLoaded}>
+                <div class="reports-hub-cards-grid">
+                    <template for:each={cardsView} for:item="card">
+                        <article
+                            key={card.id}
+                            class={card.cardClass}
+                            data-card-id={card.id}
+                            onclick={handleCardClick}
+                            onkeydown={handleCardClick}
+                            role="button"
+                            tabindex="0"
+                            aria-label={card.ariaLabel}
+                            aria-disabled={card.disabled}
+                        >
+                            <div class="reports-hub-card-icon-panel" aria-hidden="true">
+                                <lightning-icon icon-name={card.icon} size="small" class="reports-hub-card-icon"></lightning-icon>
+                            </div>
+                            <div class="reports-hub-card-body">
+                                <h3 class="reports-hub-card-title">{card.title}</h3>
+                                <p class="reports-hub-card-desc">{card.description}</p>
+                            </div>
+                            <div class="reports-hub-card-chevron" aria-hidden="true">
+                                <lightning-icon icon-name="utility:chevronright" size="x-small"></lightning-icon>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+            </template>
+
+            <template if:true={isLoading}>
+                <div class="reports-hub-loading">
+                    <lightning-spinner alternative-text="Loading reports" size="small"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={showEmptySearch}>
+                <div class="reports-hub-empty">
+                    <p>No reports match your search.</p>
+                </div>
+            </template>
+        </div>
+    </section>
+</template>

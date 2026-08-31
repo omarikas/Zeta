@@ -1,0 +1,55 @@
+.picker-modal-container {
+    max-width: 36rem;
+    width: 95%;
+}
+
+.picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.picker-row-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.picker-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.375rem;
+    border-radius: 999px;
+    background: #e3f2fd;
+    color: #0176d3;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.picker-name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.picker-meta {
+    margin: 0.125rem 0 0;
+    font-size: 0.75rem;
+    color: #706e6b;
+}
+
+.slds-hide {
+    display: none;
+}

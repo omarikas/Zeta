@@ -1,0 +1,188 @@
+<template>
+    <section class="panel-section">
+        <div class="panel-header">
+            <h3 class="panel-title">Products to Detail</h3>
+        </div>
+
+        <div class="product-layout">
+            <aside class="product-sidebar">
+                <h4 class="sidebar-title">Territory Brands</h4>
+                <template if:true={hasSidebarBrands}>
+                    <template for:each={sidebarBrands} for:item="item">
+                        <div key={item.brandKey} class="sidebar-item">
+                            <label class="sidebar-item-label">
+                                <input
+                                    type="checkbox"
+                                    class="sidebar-checkbox"
+                                    checked={item.checked}
+                                    data-brand-key={item.brandKey}
+                                    onchange={handleSidebarToggle}
+                                    disabled={disabled}
+                                />
+                                <c-product-thumbnail
+                                    image-url={item.imageUrl}
+                                    product-name={item.brandName}
+                                    size="sm"
+                                ></c-product-thumbnail>
+                                <span class="sidebar-item-text">{item.label}</span>
+                            </label>
+                        </div>
+                    </template>
+                </template>
+                <template if:false={hasSidebarBrands}>
+                    <p class="empty-hint">No territory-aligned products available.</p>
+                </template>
+            </aside>
+
+            <div class="product-main">
+                <template for:each={displayBrands} for:item="brand">
+                    <article key={brand.key} class="product-card">
+                        <header class="product-card-header">
+                            <c-product-thumbnail
+                                image-url={brand.imageUrl}
+                                product-name={brand.brandName}
+                                size="md"
+                            ></c-product-thumbnail>
+                            <span class="product-order">{brand.orderLabel}</span>
+                            <h4 class="product-name">{brand.brandName}</h4>
+                            <div class="product-actions">
+                                <lightning-button-icon
+                                    icon-name="utility:arrowup"
+                                    alternative-text="Move up"
+                                    data-brand-key={brand.brandKey}
+                                    data-direction="up"
+                                    onclick={handleMoveBrand}
+                                    disabled={brand.moveUpDisabled}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                    icon-name="utility:arrowdown"
+                                    alternative-text="Move down"
+                                    data-brand-key={brand.brandKey}
+                                    data-direction="down"
+                                    onclick={handleMoveBrand}
+                                    disabled={brand.moveDownDisabled}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                    icon-name="utility:delete"
+                                    alternative-text="Remove"
+                                    data-brand-key={brand.brandKey}
+                                    onclick={handleRemoveBrand}
+                                    disabled={disabled}
+                                ></lightning-button-icon>
+                            </div>
+                        </header>
+
+                        <div class="concentration-block">
+                            <h5 class="concentration-title">Concentrations mentioned</h5>
+                            <template if:true={brand.hasConcentrations}>
+                                <div class="concentration-list">
+                                    <template for:each={brand.concentrations} for:item="conc">
+                                        <div key={conc.productId} class="concentration-item-block">
+                                            <label class="concentration-item">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={conc.checked}
+                                                    data-brand-key={brand.brandKey}
+                                                    data-product-id={conc.productId}
+                                                    onchange={handleConcentrationToggle}
+                                                    disabled={disabled}
+                                                />
+                                                <span>{conc.label}</span>
+                                            </label>
+                                            <template if:true={conc.showNotes}>
+                                                <lightning-textarea
+                                                    class="concentration-notes"
+                                                    label="Concentration feedback"
+                                                    value={conc.notes}
+                                                    data-product-id={conc.productId}
+                                                    onchange={handleConcentrationNotesChange}
+                                                    disabled={disabled}
+                                                    placeholder="Optional notes for this concentration"
+                                                ></lightning-textarea>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template if:false={brand.hasConcentrations}>
+                                <p class="empty-hint">No concentrations available for this brand.</p>
+                            </template>
+                        </div>
+
+                        <lightning-combobox
+                            class="slds-m-top_x-small"
+                            label="Detail Type"
+                            value={brand.detailType}
+                            options={detailTypeOptions}
+                            data-brand-key={brand.brandKey}
+                            data-field="detailType"
+                            onchange={handleDetailChange}
+                            disabled={disabled}
+                        ></lightning-combobox>
+                        <lightning-textarea
+                            class="slds-m-top_x-small"
+                            label="Brand notes"
+                            value={brand.notes}
+                            data-brand-key={brand.brandKey}
+                            data-field="notes"
+                            onchange={handleDetailChange}
+                            disabled={disabled}
+                        ></lightning-textarea>
+
+                        <div class="message-block slds-m-top_small">
+                            <h5 class="message-title">Brand feedback</h5>
+                            <p class="empty-hint">Capture HCP reaction on the brand. Use concentration notes above only when needed.</p>
+                            <template for:each={brand.topicRows} for:item="topic">
+                                <article key={topic.key} class="topic-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={topic.label}
+                                        checked={topic.selected}
+                                        data-brand-key={brand.brandKey}
+                                        data-topic={topic.topic}
+                                        onchange={handleTopicToggle}
+                                        disabled={disabled}
+                                    ></lightning-input>
+                                    <template if:true={topic.selected}>
+                                        <div class="sentiment-row">
+                                            <div class="sentiment-track">
+                                                <template for:each={sentimentOptions} for:item="option">
+                                                    <button
+                                                        key={option.value}
+                                                        class="sentiment-btn"
+                                                        data-brand-key={brand.brandKey}
+                                                        data-topic={topic.topic}
+                                                        data-sentiment={option.value}
+                                                        onclick={handleSentimentChange}
+                                                        disabled={disabled}
+                                                    >
+                                                        {option.label}
+                                                    </button>
+                                                </template>
+                                            </div>
+                                            <span class="sentiment-pill">{topic.sentiment}</span>
+                                        </div>
+                                        <lightning-textarea
+                                            class="slds-m-top_x-small"
+                                            label="Response"
+                                            value={topic.response}
+                                            data-brand-key={brand.brandKey}
+                                            data-topic={topic.topic}
+                                            onchange={handleResponseChange}
+                                            disabled={disabled}
+                                            placeholder="Capture HCP response or notes for this topic"
+                                        ></lightning-textarea>
+                                    </template>
+                                </article>
+                            </template>
+                        </div>
+                    </article>
+                </template>
+
+                <template if:false={hasBrands}>
+                    <p class="empty-hint">Select a brand from the sidebar to begin detailing.</p>
+                </template>
+            </div>
+        </div>
+    </section>
+</template>

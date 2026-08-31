@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Material__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Reference to content.</description>
+    <inlineHelpText>Reference to content.</inlineHelpText>
+    <label>Material</label>
+    <referenceTo>Learning_Material__c</referenceTo>
+    <relationshipLabel>Learning Material Instances</relationshipLabel>
+    <relationshipName>Learning_Material_Instances</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

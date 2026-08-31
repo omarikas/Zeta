@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>External_ID__c</fullName>
+    <caseSensitive>true</caseSensitive>
+    <description>Stable product key from onboarding / MDM. Case-sensitive so Dal and DAL stay distinct.</description>
+    <externalId>true</externalId>
+    <label>External ID</label>
+    <length>80</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>External_ID__c</fullName>
+    <caseSensitive>false</caseSensitive>
+    <description>Stable external identifier for pharma territory hierarchy nodes (e.g. TERR_GIT, TERR_GIT_DM_1).</description>
+    <externalId>true</externalId>
+    <inlineHelpText>Unique external key used for territory seeding and hierarchy level resolution.</inlineHelpText>
+    <label>External ID</label>
+    <length>80</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

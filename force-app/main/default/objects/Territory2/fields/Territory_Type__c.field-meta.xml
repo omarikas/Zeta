@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Territory_Type__c</fullName>
+    <description>Hierarchy role of this territory node: Head Office, Business Unit, Line, District, Position, or Other.</description>
+    <inlineHelpText>Identifies whether this territory is Head Office, Business Unit, Line, District, Position (MR), or Other.</inlineHelpText>
+    <label>Territory Type</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Head_Office</fullName>
+                <default>false</default>
+                <label>Head Office</label>
+            </value>
+            <value>
+                <fullName>Business_Unit</fullName>
+                <default>false</default>
+                <label>Business Unit</label>
+            </value>
+            <value>
+                <fullName>Line</fullName>
+                <default>false</default>
+                <label>Line</label>
+            </value>
+            <value>
+                <fullName>District</fullName>
+                <default>false</default>
+                <label>District</label>
+            </value>
+            <value>
+                <fullName>Position</fullName>
+                <default>false</default>
+                <label>Position</label>
+            </value>
+            <value>
+                <fullName>Other</fullName>
+                <default>false</default>
+                <label>Other</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

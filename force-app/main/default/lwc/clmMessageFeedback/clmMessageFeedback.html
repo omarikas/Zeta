@@ -1,0 +1,64 @@
+<template>
+    <section class="message-feedback">
+        <header class="feedback-header">
+            <div class="feedback-title-row">
+                <c-product-thumbnail
+                    image-url={productImageUrl}
+                    product-name={productName}
+                    size="sm"
+                ></c-product-thumbnail>
+                <h4>Product Messages — {productName}</h4>
+            </div>
+        </header>
+
+        <template for:each={topics} for:item="topic">
+            <article key={topic.key} class="topic-row">
+                <div class="topic-select">
+                    <lightning-input
+                        type="checkbox"
+                        label={topic.name}
+                        checked={topic.selected}
+                        data-name={topic.name}
+                        onchange={handleTopicToggle}
+                    ></lightning-input>
+                </div>
+                <template if:true={topic.selected}>
+                    <div class="sentiment-row">
+                        <div class="sentiment-track">
+                            <template for:each={sentimentOptions} for:item="option">
+                                <button
+                                    key={option.value}
+                                    class="sentiment-btn"
+                                    data-name={topic.name}
+                                    data-sentiment={option.value}
+                                    onclick={handleSentimentChange}
+                                >
+                                    {option.label}
+                                </button>
+                            </template>
+                        </div>
+                        <template if:true={topic.sentiment}>
+                            <span class="sentiment-pill">{topic.sentiment}</span>
+                        </template>
+                        <lightning-button
+                            label="Remove"
+                            variant="base"
+                            data-name={topic.name}
+                            onclick={handleRemove}
+                        ></lightning-button>
+                    </div>
+                </template>
+            </article>
+        </template>
+
+        <footer class="feedback-actions">
+            <lightning-button label="Cancel" onclick={handleCancel}></lightning-button>
+            <lightning-button
+                label="Save Feedback"
+                variant="brand"
+                onclick={handleSave}
+                disabled={isSaving}
+            ></lightning-button>
+        </footer>
+    </section>
+</template>

@@ -1,0 +1,117 @@
+.insight-card {
+    background: #fafbfc;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.insight-card-first {
+    margin-top: 0;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.625rem;
+}
+
+.card-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0;
+}
+
+.card-icon {
+    --slds-c-icon-color-foreground-default: #0176d3;
+}
+
+.radius-hint,
+.empty-copy,
+.insight-error {
+    color: #706e6b;
+    font-size: 0.8125rem;
+    margin: 0 0 0.5rem;
+}
+
+.insight-error {
+    color: #c23934;
+}
+
+.pharmacy-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pharmacy-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ecebea;
+}
+
+.pharmacy-row:last-child {
+    border-bottom: none;
+}
+
+.pharmacy-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.pharmacy-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.pharmacy-meta {
+    color: #706e6b;
+    font-size: 0.75rem;
+}
+
+.prior-visit {
+    padding: 0.625rem 0;
+    border-bottom: 1px solid #ecebea;
+}
+
+.prior-visit:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.prior-visit-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.prior-visit-date {
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.prior-visit-rep {
+    color: #706e6b;
+    font-size: 0.75rem;
+}
+
+.prior-visit-objective,
+.prior-visit-notes,
+.prior-visit-products {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: #3e3e3c;
+}
+
+.prior-visit-notes {
+    color: #706e6b;
+}

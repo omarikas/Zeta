@@ -1,0 +1,245 @@
+<template>
+    <section class="pb-dash">
+        <header class="pb-dash-header">
+            <div class="pb-dash-header-icon" aria-hidden="true">
+                <lightning-icon icon-name="utility:money" size="small"></lightning-icon>
+            </div>
+            <div class="pb-dash-header-text">
+                <h1 class="pb-dash-header-title">Promo Budget</h1>
+                <p class="pb-dash-header-subtitle">
+                    Track promotional spend, utilization, and project-linked budget lines by business unit.
+                </p>
+            </div>
+            <div class="pb-dash-header-actions">
+                <lightning-button-icon
+                    icon-name="utility:refresh"
+                    alternative-text="Refresh budgets"
+                    title="Refresh"
+                    onclick={handleRefresh}
+                    disabled={isRefreshing}
+                ></lightning-button-icon>
+            </div>
+        </header>
+
+        <div class="pb-dash-body">
+            <div class="pb-dash-toolbar">
+                <lightning-combobox
+                    label="Business Unit"
+                    value={selectedBu}
+                    options={buOptions}
+                    onchange={handleBuChange}
+                ></lightning-combobox>
+            </div>
+
+            <template if:true={error}>
+                <div class="pb-dash-alert pb-dash-alert--error" role="alert">{error}</div>
+            </template>
+
+            <template if:true={isLoading}>
+                <div class="pb-dash-loading">
+                    <lightning-spinner alternative-text="Loading promo budgets" size="small"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={showEmpty}>
+                <div class="pb-dash-empty">
+                    <lightning-icon icon-name="utility:money" size="large"></lightning-icon>
+                    <h2>No promo budgets found</h2>
+                    <p>Adjust the business unit filter or add promo budget records to get started.</p>
+                </div>
+            </template>
+
+            <template if:true={hasBudgets}>
+                <div class="pb-dash-kpis">
+                    <article class="pb-dash-kpi">
+                        <span class="pb-dash-kpi-label">Total allocated</span>
+                        <span class="pb-dash-kpi-value">{summary.allocatedDisplay}</span>
+                    </article>
+                    <article class="pb-dash-kpi">
+                        <span class="pb-dash-kpi-label">Total spent</span>
+                        <span class="pb-dash-kpi-value pb-dash-kpi-value--spent">{summary.spentDisplay}</span>
+                    </article>
+                    <article class="pb-dash-kpi">
+                        <span class="pb-dash-kpi-label">Remaining</span>
+                        <span class="pb-dash-kpi-value pb-dash-kpi-value--remaining">{summary.remainingDisplay}</span>
+                    </article>
+                    <article class="pb-dash-kpi pb-dash-kpi--utilization">
+                        <span class="pb-dash-kpi-label">Portfolio utilization</span>
+                        <span class="pb-dash-kpi-value">{summary.overallUtilizationDisplay}</span>
+                        <div class="pb-dash-kpi-bar-track">
+                            <div
+                                class={summary.overallUtilizationToneClass}
+                                style={summary.overallUtilizationBarStyle}
+                            ></div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="pb-dash-section-header">
+                    <span class="pb-dash-section-label">Budget breakdown</span>
+                    <span class="pb-dash-section-count">{budgetCountLabel}</span>
+                    <span class="pb-dash-section-hint">Click a row to expand budget lines</span>
+                </div>
+
+                <div class="pb-dash-table-wrap">
+                    <table class="pb-dash-table">
+                        <thead>
+                            <tr>
+                                <th class="pb-dash-th pb-dash-th--expand" scope="col" aria-hidden="true"></th>
+                                <th class="pb-dash-th pb-dash-th--sortable" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="businessUnit"
+                                        onclick={handleSort}
+                                    >
+                                        BU
+                                        <lightning-icon icon-name={sortIconBu} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                                <th class="pb-dash-th pb-dash-th--sortable" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="department"
+                                        onclick={handleSort}
+                                    >
+                                        Department
+                                        <lightning-icon icon-name={sortIconDepartment} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                                <th class="pb-dash-th pb-dash-th--sortable pb-dash-th--num" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="allocated"
+                                        onclick={handleSort}
+                                    >
+                                        Allocated
+                                        <lightning-icon icon-name={sortIconAllocated} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                                <th class="pb-dash-th pb-dash-th--sortable pb-dash-th--num" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="spent"
+                                        onclick={handleSort}
+                                    >
+                                        Spent
+                                        <lightning-icon icon-name={sortIconSpent} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                                <th class="pb-dash-th pb-dash-th--sortable pb-dash-th--num" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="remaining"
+                                        onclick={handleSort}
+                                    >
+                                        Remaining
+                                        <lightning-icon icon-name={sortIconRemaining} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                                <th class="pb-dash-th pb-dash-th--sortable pb-dash-th--util" scope="col">
+                                    <button
+                                        type="button"
+                                        class="pb-dash-sort-btn"
+                                        data-field="utilizationPercent"
+                                        onclick={handleSort}
+                                    >
+                                        Utilization
+                                        <lightning-icon icon-name={sortIconUtilization} size="xx-small"></lightning-icon>
+                                    </button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={budgets} for:item="b">
+                                <tr
+                                    key={b.id}
+                                    class="pb-dash-row"
+                                    data-id={b.id}
+                                    onclick={handleRowToggle}
+                                    onkeydown={handleRowKeydown}
+                                    tabindex="0"
+                                    role="button"
+                                    aria-expanded={b.ariaExpanded}
+                                    aria-label={b.name}
+                                >
+                                    <td class="pb-dash-td pb-dash-td--expand">
+                                        <lightning-icon icon-name={b.expandIcon} size="xx-small"></lightning-icon>
+                                    </td>
+                                    <td class="pb-dash-td">
+                                        <span class="pb-dash-bu-chip">{b.businessUnit}</span>
+                                    </td>
+                                    <td class="pb-dash-td">
+                                        <span class="pb-dash-dept">{b.department}</span>
+                                        <template if:true={b.fiscalYear}>
+                                            <span class="pb-dash-fy">{b.fiscalYear}</span>
+                                        </template>
+                                    </td>
+                                    <td class="pb-dash-td pb-dash-td--num">{b.allocatedDisplay}</td>
+                                    <td class="pb-dash-td pb-dash-td--num pb-dash-td--spent">{b.spentDisplay}</td>
+                                    <td class="pb-dash-td pb-dash-td--num pb-dash-td--remaining">{b.remainingDisplay}</td>
+                                    <td class="pb-dash-td pb-dash-td--util">
+                                        <div class="pb-dash-util-cell">
+                                            <span class={b.utilizationBadgeClass}>{b.utilizationDisplay}</span>
+                                            <div class="pb-dash-util-track">
+                                                <div
+                                                    class={b.utilizationToneClass}
+                                                    style={b.utilizationBarStyle}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <template if:true={b.isExpanded}>
+                                    <tr key={b.detailKey} class="pb-dash-detail-row">
+                                        <td colspan="7" class="pb-dash-detail-cell">
+                                            <div class="pb-dash-detail-panel">
+                                                <div class="pb-dash-detail-header">
+                                                    <h3 class="pb-dash-detail-title">{b.name}</h3>
+                                                    <span class="pb-dash-detail-meta">{b.lineCountLabel}</span>
+                                                </div>
+                                                <template if:true={b.hasLines}>
+                                                    <table class="pb-dash-lines-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col">Brand</th>
+                                                                <th scope="col">Campaign</th>
+                                                                <th scope="col">Project</th>
+                                                                <th scope="col">Territory</th>
+                                                                <th class="pb-dash-th--num" scope="col">Amount</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <template for:each={b.lines} for:item="line">
+                                                                <tr key={line.key}>
+                                                                    <td>{line.brand}</td>
+                                                                    <td>{line.campaign}</td>
+                                                                    <td>{line.projectName}</td>
+                                                                    <td>{line.territory}</td>
+                                                                    <td class="pb-dash-td--num">{line.amountDisplay}</td>
+                                                                </tr>
+                                                            </template>
+                                                        </tbody>
+                                                    </table>
+                                                </template>
+                                                <template if:false={b.hasLines}>
+                                                    <p class="pb-dash-detail-empty">
+                                                        No budget lines linked yet. Lines connect spend to projects and campaigns.
+                                                    </p>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </div>
+    </section>
+</template>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathAssistant xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <entityName>Visit__c</entityName>
+    <fieldName>Status__c</fieldName>
+    <masterLabel>Visit</masterLabel>
+    <pathAssistantSteps>
+        <fieldNames>Cancellation_Reason__c</fieldNames>
+        <info>&lt;p&gt;This visit was &lt;strong&gt;cancelled&lt;/strong&gt;. The cancellation reason is stored for reporting.&lt;/p&gt;</info>
+        <picklistValueName>Cancelled</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Products_Discussed__c</fieldNames>
+        <fieldNames>Visit_Notes__c</fieldNames>
+        <fieldNames>Next_Visit_Date__c</fieldNames>
+        <info>&lt;p&gt;Document the call: &lt;strong&gt;products discussed&lt;/strong&gt;, &lt;strong&gt;notes&lt;/strong&gt;, and the &lt;strong&gt;next visit date&lt;/strong&gt;, then mark the visit completed.&lt;/p&gt;</info>
+        <picklistValueName>Completed</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Account__c</fieldNames>
+        <fieldNames>Start_Date__c</fieldNames>
+        <fieldNames>Visit_Objective__c</fieldNames>
+        <info>&lt;p&gt;Plan the call on your calendar. Confirm the &lt;strong&gt;account&lt;/strong&gt;, &lt;strong&gt;date and time&lt;/strong&gt;, and optional &lt;strong&gt;visit objective&lt;/strong&gt; before submitting for approval.&lt;/p&gt;</info>
+        <picklistValueName>Draft</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Submitted_At__c</fieldNames>
+        <fieldNames>Assigned_To__c</fieldNames>
+        <info>&lt;p&gt;Your visit plan is &lt;strong&gt;submitted&lt;/strong&gt; and awaiting manager approval.&lt;/p&gt;</info>
+        <picklistValueName>Submitted</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Visit_Objective__c</fieldNames>
+        <fieldNames>Products_Discussed__c</fieldNames>
+        <info>&lt;p&gt;The visit is &lt;strong&gt;scheduled&lt;/strong&gt;. Prepare your call plan and capture products to discuss before the field visit.&lt;/p&gt;</info>
+        <picklistValueName>Scheduled</picklistValueName>
+    </pathAssistantSteps>
+    <recordTypeName>__MASTER__</recordTypeName>
+</PathAssistant>

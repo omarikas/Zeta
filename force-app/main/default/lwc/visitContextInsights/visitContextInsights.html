@@ -1,0 +1,75 @@
+<template>
+    <template if:true={error}>
+        <div class="insight-error">{error}</div>
+    </template>
+
+    <template if:true={insights}>
+        <article class="insight-card insight-card-first">
+            <header class="card-header">
+                <lightning-icon icon-name="utility:summary" size="x-small" class="card-icon"></lightning-icon>
+                <h3 class="card-title">Previous Visit Summary (Same Territory)</h3>
+            </header>
+            <template if:true={hasTerritoryVisits}>
+                <template for:each={insights.territoryPriorVisits} for:item="visit">
+                    <section key={visit.visitId} class="prior-visit">
+                        <div class="prior-visit-head">
+                            <span class="prior-visit-date">{visit.whenLabel}</span>
+                            <span class="prior-visit-rep">{visit.repName}</span>
+                        </div>
+                        <p class="prior-visit-objective">{visit.objective}</p>
+                        <template if:true={visit.notesSnippet}>
+                            <p class="prior-visit-notes">{visit.notesSnippet}</p>
+                        </template>
+                        <template if:true={visit.productsDiscussed}>
+                            <p class="prior-visit-products">Products: {visit.productsDiscussed}</p>
+                        </template>
+                        <lightning-button
+                            class="slds-m-top_x-small"
+                            label="Open Visit"
+                            variant="base"
+                            data-id={visit.visitId}
+                            onclick={handleOpenVisit}
+                        ></lightning-button>
+                    </section>
+                </template>
+            </template>
+            <template if:false={hasTerritoryVisits}>
+                <p class="empty-copy">No prior completed visits in this territory for this account.</p>
+            </template>
+        </article>
+
+        <article class="insight-card">
+            <header class="card-header">
+                <lightning-icon icon-name="utility:company" size="x-small" class="card-icon"></lightning-icon>
+                <h3 class="card-title">Previous Visit Summary from Pharma</h3>
+            </header>
+            <template if:true={hasZetaVisits}>
+                <template for:each={insights.zetaPriorVisits} for:item="visit">
+                    <section key={visit.visitId} class="prior-visit">
+                        <div class="prior-visit-head">
+                            <span class="prior-visit-date">{visit.whenLabel}</span>
+                            <span class="prior-visit-rep">{visit.repName}</span>
+                        </div>
+                        <p class="prior-visit-objective">{visit.objective}</p>
+                        <template if:true={visit.notesSnippet}>
+                            <p class="prior-visit-notes">{visit.notesSnippet}</p>
+                        </template>
+                        <template if:true={visit.productsDiscussed}>
+                            <p class="prior-visit-products">Products: {visit.productsDiscussed}</p>
+                        </template>
+                        <lightning-button
+                            class="slds-m-top_x-small"
+                            label="Open Visit"
+                            variant="base"
+                            data-id={visit.visitId}
+                            onclick={handleOpenVisit}
+                        ></lightning-button>
+                    </section>
+                </template>
+            </template>
+            <template if:false={hasZetaVisits}>
+                <p class="empty-copy">No prior completed visits from Pharma for this account.</p>
+            </template>
+        </article>
+    </template>
+</template>

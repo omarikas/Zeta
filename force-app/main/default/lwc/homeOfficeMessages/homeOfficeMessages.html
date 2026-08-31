@@ -1,0 +1,74 @@
+<template>
+    <lightning-card class="ho-messages-card">
+        <div slot="title" class="ho-header">
+            <lightning-icon icon-name="utility:announcement" size="small" class="ho-header-icon"></lightning-icon>
+            <div>
+                <h2 class="ho-title">Home Office Messages</h2>
+                <p class="ho-subtitle">Corporate updates from Head Office</p>
+            </div>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="ho-loading">
+                <lightning-spinner alternative-text="Loading messages" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <template if:true={hasMessages}>
+                <div
+                    class="ho-carousel"
+                    role="region"
+                    aria-label="Home Office Messages carousel"
+                    aria-live="polite"
+                    onmouseenter={handleCarouselMouseEnter}
+                    onmouseleave={handleCarouselMouseLeave}
+                >
+                    <div class="ho-carousel-viewport">
+                        <div class="ho-carousel-track" style={trackStyle}>
+                            <template for:each={messageRows} for:item="message">
+                                <article key={message.recordId} class={message.cardClass}>
+                                    <div class="ho-message-head">
+                                        <div class="ho-message-meta">
+                                            <template if:true={message.isHighPriority}>
+                                                <span class="ho-priority-badge">High Priority</span>
+                                            </template>
+                                            <span class="ho-audience">{message.audienceLabel}</span>
+                                        </div>
+                                        <span class="ho-date">{message.publishedLabel}</span>
+                                    </div>
+                                    <h3 class="ho-subject">{message.subject}</h3>
+                                    <p class="ho-author">{message.authorName}</p>
+                                    <p class="ho-body">{message.body}</p>
+                                </article>
+                            </template>
+                        </div>
+                    </div>
+
+                    <template if:true={showDots}>
+                        <div class="ho-dots" role="tablist" aria-label="Message navigation">
+                            <template for:each={messageRows} for:item="message">
+                                <button
+                                    key={message.recordId}
+                                    type="button"
+                                    class={message.dotClass}
+                                    data-index={message.index}
+                                    onclick={handleDotClick}
+                                    role="tab"
+                                    aria-selected={message.isActive}
+                                    aria-label={message.dotLabel}
+                                ></button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasMessages}>
+                <div class="ho-empty">
+                    <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                    <span>No messages from Head Office right now.</span>
+                </div>
+            </template>
+        </template>
+    </lightning-card>
+</template>

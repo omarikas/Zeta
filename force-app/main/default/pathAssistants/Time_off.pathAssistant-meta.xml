@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathAssistant xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <entityName>Time_Off_Request__c</entityName>
+    <fieldName>Stage__c</fieldName>
+    <masterLabel>Time off</masterLabel>
+    <pathAssistantSteps>
+        <info>&lt;p&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;This request is &lt;/span&gt;&lt;strong style=&quot;font-size: 13px;&quot;&gt;approved&lt;/strong&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;. The dates and type shown on the record are what was agreed plan your calendar and handoffs accordingly. If something changes (dates, type, or you need to cancel), follow your company process: do not edit an approved record unless your admin or process allows it; create a new request or follow local policy. Keep activities or notes on the record if your team uses them for visibility.&lt;/span&gt;&lt;/p&gt;</info>
+        <picklistValueName>Approved</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Comments__c</fieldNames>
+        <info>&lt;p&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Complete your request before submitting. Choose the correct type (event, travel, branch visit, holiday) and set start and end time accurately. If this is a full day, use the full-day option when it applies so times stay clear for your manager. Add comments if the request needs context (coverage, customer visits, or policy notes). If everything looks right,  &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Submit for Approval you can still recall the request while it is in draft.&lt;/span&gt;&lt;/p&gt;</info>
+        <picklistValueName>Draft</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Rejection_Reason__c</fieldNames>
+        <info>&lt;p&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;This request was &lt;/span&gt;&lt;strong style=&quot;font-size: 13px;&quot;&gt;not&lt;/strong&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt; &lt;/span&gt;&lt;strong style=&quot;font-size: 13px;&quot;&gt;approved&lt;/strong&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;. Read the rejection reason (if provided) and adjust your plan or submit a new request with corrected dates, type, or comments. If the reason is unclear, contact your manager before resubmitting. Avoid overlapping duplicate requests for the same period update the original intent in one clear submission so approvals stay fast and accurate.&lt;/span&gt;&lt;/p&gt;</info>
+        <picklistValueName>Rejected</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Manager_Formula__c</fieldNames>
+        <info>&lt;p&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;Your request is with &lt;/span&gt;&lt;strong style=&quot;font-size: 13px;&quot;&gt;your&lt;/strong&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt; &lt;/span&gt;&lt;strong style=&quot;font-size: 13px;&quot;&gt;manager&lt;/strong&gt;&lt;span style=&quot;font-size: 13px;&quot;&gt;. You don’t need to take further action unless they ask for changes. Do not edit the record while it is pending wait for an approval or rejection. If you submitted by mistake, use Recall only if your process allows it. You’ll be notified when the decision is recorded. If the request is urgent, follow your team’s normal escalation channel (e.g. chat or email) don’t create duplicate requests for the same dates.&lt;/span&gt;&lt;/p&gt;</info>
+        <picklistValueName>Submitted for Approval</picklistValueName>
+    </pathAssistantSteps>
+    <recordTypeName>__MASTER__</recordTypeName>
+</PathAssistant>

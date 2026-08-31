@@ -1,0 +1,111 @@
+<template>
+    <article class="fleet-shell slds-card">
+        <header class="fleet-header">
+            <div>
+                <h2 class="fleet-title">Field Tracking Map</h2>
+                <p class="fleet-subtitle">Live rep locations and planned routes on OpenStreetMap</p>
+            </div>
+            <div class="fleet-header-meta">
+                <span class="scope-badge">{scopeLabel}</span>
+                <lightning-button
+                    label="Refresh"
+                    icon-name="utility:refresh"
+                    onclick={handleManualRefresh}
+                ></lightning-button>
+            </div>
+        </header>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_small filter-row">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <lightning-combobox
+                        label="Business Unit"
+                        value={selectedBu}
+                        options={buOptions}
+                        onchange={handleBuChange}
+                    ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <lightning-combobox
+                        label="Line"
+                        value={selectedLine}
+                        options={lineOptions}
+                        onchange={handleLineChange}
+                    ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <lightning-combobox
+                        label="District"
+                        value={selectedDistrict}
+                        options={districtOptions}
+                        onchange={handleDistrictChange}
+                    ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                    <lightning-input
+                        type="date"
+                        label="Route Date"
+                        value={routeDateValue}
+                        onchange={handleDateChange}
+                    ></lightning-input>
+                </div>
+            </div>
+
+            <div class="status-strip">
+                <span class="status-chip online">{summary.onlineCount} online</span>
+                <span class="status-chip stale">{summary.staleCount} stale</span>
+                <span class="status-chip offline">{summary.offlineCount} offline</span>
+            </div>
+
+            <template if:true={errorMessage}>
+                <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+            </template>
+
+            <div class="fleet-layout">
+                <aside class="fleet-sidebar">
+                    <h3 class="sidebar-title">Field Reps</h3>
+                    <template if:true={isLoading}>
+                        <lightning-spinner alternative-text="Loading fleet data" size="small"></lightning-spinner>
+                    </template>
+                    <template if:false={isLoading}>
+                        <template if:true={hasReps}>
+                            <ul class="rep-list">
+                                <template for:each={repRows} for:item="rep">
+                                    <li key={rep.userId} class="rep-row">
+                                        <span class="rep-swatch" style={rep.swatchStyle}></span>
+                                        <div class="rep-copy">
+                                            <div class="rep-name-row">
+                                                <span class="rep-name">{rep.userName}</span>
+                                                <span class={rep.statusClass}>{rep.statusLabel}</span>
+                                            </div>
+                                            <div class="rep-meta">{rep.lastSeenLabel} · {rep.visitsLabel}</div>
+                                        </div>
+                                        <lightning-input
+                                            type="checkbox"
+                                            label={rep.toggleLabel}
+                                            variant="label-hidden"
+                                            checked={rep.isVisible}
+                                            data-rep-id={rep.userId}
+                                            onchange={handleRepToggle}
+                                        ></lightning-input>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+                        <template if:false={hasReps}>
+                            <p class="empty-copy">{emptyMessage}</p>
+                        </template>
+                    </template>
+                </aside>
+                <div class="fleet-map-panel">
+                    <div class="fleet-map-root" lwc:dom="manual"></div>
+                    <template if:true={isLoading}>
+                        <div class="map-overlay">
+                            <lightning-spinner alternative-text="Loading map" size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </article>
+</template>

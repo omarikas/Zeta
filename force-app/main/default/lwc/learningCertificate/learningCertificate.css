@@ -1,0 +1,29 @@
+.certificate-page {
+    padding: 1rem;
+}
+
+.certificate-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.certificate-shell {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(11, 61, 92, 0.08);
+}
+
+.error {
+    color: #ba0517;
+    padding: 1rem;
+    border: 1px solid #f3a3a9;
+    border-radius: 8px;
+}
+
+@media print {
+    .certificate-actions {
+        display: none;
+    }
+}

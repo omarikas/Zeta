@@ -1,0 +1,43 @@
+<template>
+    <section class="panel-section">
+        <div class="panel-header">
+            <h3 class="panel-title">Attendees</h3>
+            <lightning-button
+                label="Add Attendees"
+                icon-name="utility:add"
+                onclick={handleOpenPicker}
+                disabled={disabled}
+            ></lightning-button>
+        </div>
+        <template if:true={hasAttendees}>
+            <div class="chip-row">
+                <template for:each={displayAttendees} for:item="row">
+                    <span key={row.key} class={row.chipClass}>
+                        <span class="chip-badge">{row.accountTypeLabel}</span>
+                        <span class="chip-label">{row.accountName}</span>
+                        <template if:false={row.isPrimary}>
+                            <button
+                                class="chip-remove"
+                                data-id={row.accountId}
+                                onclick={handleRemove}
+                                disabled={disabled}
+                                title="Remove"
+                            >×</button>
+                        </template>
+                    </span>
+                </template>
+            </div>
+        </template>
+        <template if:false={hasAttendees}>
+            <p class="empty-hint">Add HCP attendees for this call.</p>
+        </template>
+    </section>
+
+    <c-record-picker-modal
+        visit-id={visitId}
+        title="Search All Attendees"
+        open={pickerOpen}
+        onselect={handlePickerSelect}
+        onclose={handleClosePicker}
+    ></c-record-picker-modal>
+</template>

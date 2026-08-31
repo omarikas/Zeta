@@ -1,0 +1,910 @@
+<template>
+    <article class="mgmt-dashboard slds-card">
+        <header class="mgmt-header">
+            <div class="mgmt-header-text">
+                <h2 class="mgmt-title">Team KPI Command Center</h2>
+                <p class="mgmt-subtitle">Filter by business unit, line, or district — click any KPI to drill down</p>
+            </div>
+            <div class="mgmt-header-actions">
+                <button type="button" class="broadcast-btn" onclick={openBroadcastModal}>
+                    <lightning-icon icon-name="utility:announcement" size="x-small"></lightning-icon>
+                    <span>Message All BUs</span>
+                </button>
+                <span class="scope-badge">{scopeLabel}</span>
+            </div>
+        </header>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <div class="slds-m-bottom_medium">
+                <c-visit-plan-approval-queue></c-visit-plan-approval-queue>
+                <c-visit-unplanned-validation-queue></c-visit-unplanned-validation-queue>
+            </div>
+            <div class="slds-grid slds-gutters slds-wrap slds-m-bottom_medium filter-row">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-combobox
+                        label="Business Unit"
+                        value={selectedBu}
+                        options={buOptions}
+                        onchange={handleBuChange}
+                    ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-combobox
+                        label="Line"
+                        value={selectedLine}
+                        options={lineOptions}
+                        onchange={handleLineChange}
+                    ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                    <lightning-combobox
+                        label="District"
+                        value={selectedDistrict}
+                        options={districtOptions}
+                        onchange={handleDistrictChange}
+                    ></lightning-combobox>
+                </div>
+            </div>
+
+            <template if:true={isLoading}>
+                <div class="mgmt-loading">
+                    <lightning-spinner alternative-text="Loading KPIs" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={errorMessage}>
+                <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+            </template>
+
+            <template if:false={isLoading}>
+                <div class={dashboardBodyClass}>
+                    <section class="workforce-section">
+                        <div class="section-heading">
+                            <h3 class="section-title">Workforce &amp; Activity</h3>
+                            <p class="section-hint">Headcount, monthly visits, and CLM adoption for the selected scope</p>
+                        </div>
+                        <div class="workforce-grid">
+                            <template for:each={workforceTiles} for:item="tile">
+                                <button
+                                    key={tile.id}
+                                    type="button"
+                                    class={tile.tileClass}
+                                    data-tile={tile.id}
+                                    onclick={handleWorkforceTileClick}
+                                    title={tile.hint}
+                                >
+                                    <lightning-icon icon-name={tile.icon} size="small"></lightning-icon>
+                                    <span class="workforce-value">{tile.value}</span>
+                                    <span class="workforce-label">{tile.label}</span>
+                                    <span class="workforce-hint">{tile.hint}</span>
+                                </button>
+                            </template>
+                        </div>
+                        <template if:true={hasMonthlyVisitChart}>
+                            <div class="monthly-visits-chart">
+                                <h4 class="monthly-chart-title">Completed Visits — Last 6 Months</h4>
+                                <p class="monthly-chart-caption">Completed field visits across team reps · last 6 calendar months</p>
+                                <div class="monthly-chart-wrap">
+                                    <div class="monthly-y-axis" aria-hidden="true">
+                                        <span>{monthlyChartMeta.yMaxLabel}</span>
+                                        <span>{monthlyChartMeta.yMidLabel}</span>
+                                        <span>{monthlyChartMeta.yZeroLabel}</span>
+                                    </div>
+                                    <div class="monthly-plot">
+                                        <template for:each={monthlyVisitChart} for:item="point">
+                                            <div key={point.monthKey} class="monthly-bar-column">
+                                                <span class="monthly-count">{point.countLabel}</span>
+                                                <div class="monthly-bar-track">
+                                                    <div class="monthly-bar" style={point.barStyle} title={point.tooltip}></div>
+                                                </div>
+                                                <span class="monthly-label">{point.monthLabel}</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <template if:true={hasCoachingScoreChart}>
+                            <!-- coaching chart removed for migration -->
+                        </template>
+                    </section>
+
+                    <!-- Primary ring KPIs -->
+                    <section class="kpi-section">
+                        <div class="section-heading">
+                            <h3 class="section-title">Team Performance</h3>
+                            <p class="section-hint">Month-to-date averages · click a ring for rep breakdown</p>
+                        </div>
+                        <div class="kpi-row-primary">
+                            <template for:each={primaryRings} for:item="ring">
+                                <button
+                                    key={ring.id}
+                                    type="button"
+                                    class={ring.cardClass}
+                                    data-kpi={ring.id}
+                                    onclick={handleKpiClick}
+                                >
+                                    <div class="kpi-ring">
+                                        <svg class="kpi-ring-svg" viewBox="0 0 52 52" aria-hidden="true">
+                                            <circle class="kpi-ring-bg" cx="26" cy="26" r="22"></circle>
+                                            <circle
+                                                class={ring.ringClass}
+                                                cx="26"
+                                                cy="26"
+                                                r="22"
+                                                style={ring.ringStroke}
+                                            ></circle>
+                                        </svg>
+                                        <span class="kpi-ring-value">{ring.value}</span>
+                                    </div>
+                                    <div class="kpi-meta">
+                                        <span class="kpi-label">{ring.label}</span>
+                                        <span class="kpi-hint">{ring.hint}</span>
+                                    </div>
+                                    <span class={ring.statusClass}></span>
+                                </button>
+                            </template>
+                        </div>
+                    </section>
+
+                    <!-- Secondary stats + visit mix -->
+                    <div class="reports-grid">
+                        <section class="report-panel">
+                            <h3 class="section-title">Activity Snapshot</h3>
+                            <div class="stat-row">
+                                <template for:each={secondaryStats} for:item="stat">
+                                    <button
+                                        key={stat.id}
+                                        type="button"
+                                        class={stat.cardClass}
+                                        data-kpi={stat.id}
+                                        onclick={handleKpiClick}
+                                    >
+                                        <lightning-icon icon-name={stat.icon} size="small"></lightning-icon>
+                                        <div class="stat-body">
+                                            <span class="stat-value">{stat.value}</span>
+                                            <span class="stat-label">{stat.label}</span>
+                                        </div>
+                                    </button>
+                                </template>
+                            </div>
+                        </section>
+
+                        <section class="report-panel visit-mix-panel">
+                            <h3 class="section-title">Visit Patterns</h3>
+                            <p class="section-hint">AM vs PM split and single vs double visits</p>
+
+                            <div class="visit-mix-block">
+                                <div class="mix-label-row">
+                                    <span>AM {visitMix.amDisplay}</span>
+                                    <span>PM {visitMix.pmDisplay}</span>
+                                </div>
+                                <div class="stacked-bar am-pm-bar">
+                                    <div class="stack-segment am-segment" style={visitMix.amBarStyle} title="AM visits"></div>
+                                    <div class="stack-segment pm-segment" style={visitMix.pmBarStyle} title="PM visits"></div>
+                                </div>
+                            </div>
+
+                            <div class="visit-mix-block visit-donut-row">
+                                <button type="button" class="donut-card" data-kpi="single" onclick={handleKpiClick}>
+                                    <div class="donut-wrap">
+                                        <svg class="donut-svg" viewBox="0 0 44 44" aria-hidden="true">
+                                            <circle class="donut-bg" cx="22" cy="22" r="18"></circle>
+                                            <circle
+                                                class="donut-fill donut-fill-blue"
+                                                cx="22"
+                                                cy="22"
+                                                r="18"
+                                                style={visitMix.singleDonutStroke}
+                                            ></circle>
+                                        </svg>
+                                        <span class="donut-value">{visitMix.singleDisplay}</span>
+                                    </div>
+                                    <span class="donut-label">Single Visits</span>
+                                </button>
+                                <button type="button" class="donut-card" data-kpi="double" onclick={handleKpiClick}>
+                                    <div class="donut-wrap">
+                                        <svg class="donut-svg" viewBox="0 0 44 44" aria-hidden="true">
+                                            <circle class="donut-bg" cx="22" cy="22" r="18"></circle>
+                                            <circle
+                                                class="donut-fill donut-fill-purple"
+                                                cx="22"
+                                                cy="22"
+                                                r="18"
+                                                style={visitMix.doubleDonutStroke}
+                                            ></circle>
+                                        </svg>
+                                        <span class="donut-value">{visitMix.doubleDisplay}</span>
+                                    </div>
+                                    <span class="donut-label">Double Visits</span>
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Hierarchy comparison chart -->
+                    <template if:true={hasHierarchyChart}>
+                        <section class="chart-section">
+                            <div class="section-heading">
+                                <h3 class="section-title">Hierarchy Comparison</h3>
+                                <p class="section-hint">Click a column to expand in drill-down table below</p>
+                            </div>
+                            <div class="chart-legend">
+                                <template for:each={chartLegend} for:item="item">
+                                    <span key={item.id} class="legend-item">
+                                        <span class={item.swatchClass}></span>
+                                        {item.label}
+                                    </span>
+                                </template>
+                            </div>
+                            <div class="comparison-chart">
+                                <template for:each={hierarchyChartRows} for:item="row">
+                                    <button
+                                        key={row.key}
+                                        type="button"
+                                        class={row.cardClass}
+                                        data-key={row.key}
+                                        onclick={handleHierarchyBarClick}
+                                    >
+                                        <div class="chart-bars">
+                                            <div
+                                                class="chart-bar coverage"
+                                                style={row.coverageBarStyle}
+                                                title={row.coverage}
+                                            ></div>
+                                            <div
+                                                class="chart-bar call-rate"
+                                                style={row.callRateBarStyle}
+                                                title={row.callRate}
+                                            ></div>
+                                        </div>
+                                        <span class="chart-label">{row.label}</span>
+                                        <span class="chart-level">{row.level}</span>
+                                    </button>
+                                </template>
+                            </div>
+                        </section>
+                    </template>
+
+                    <c-egypt-coverage-heat-map
+                        bu-territory-id={selectedBu}
+                        line-territory-id={selectedLine}
+                        district-territory-id={selectedDistrict}
+                    ></c-egypt-coverage-heat-map>
+
+                    <!-- Product performance (when BU selected) -->
+                    <template if:true={showProductSection}>
+                        <section class="product-section">
+                            <div class="section-heading">
+                                <h3 class="section-title">Product Performance</h3>
+                                <p class="section-hint">Top aligned products by visits (MTD)</p>
+                            </div>
+                            <template if:true={isProductLoading}>
+                                <div class="mgmt-loading compact">
+                                    <lightning-spinner alternative-text="Loading products" size="small"></lightning-spinner>
+                                </div>
+                            </template>
+                            <template if:false={isProductLoading}>
+                                <template if:true={hasProductPerformance}>
+                                    <div class="product-grid">
+                                        <template for:each={productPerformanceRows} for:item="product">
+                                            <article
+                                                key={product.productId}
+                                                class={product.cardClass}
+                                                data-product-id={product.productId}
+                                                onclick={handleProductClick}
+                                                role="button"
+                                                tabindex="0"
+                                                title="View message sentiment and top detailing reps"
+                                            >
+                                                <div class="product-image-wrap">
+                                                    <c-product-thumbnail
+                                                        image-url={product.imageUrl}
+                                                        product-name={product.productName}
+                                                        size="lg"
+                                                    ></c-product-thumbnail>
+                                                </div>
+                                                <h4 class="product-name">{product.productName}</h4>
+                                                <div class="performance-bar-track">
+                                                    <div class="performance-bar-fill" style={product.visitBarStyle}></div>
+                                                </div>
+                                                <div class="product-stats">
+                                                    <span>{product.visitCount} visits</span>
+                                                    <span>{product.clmSessionCount} CLM</span>
+                                                    <span>{product.positiveDisplay} positive</span>
+                                                </div>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:false={hasProductPerformance}>
+                                    <p class="section-hint">No aligned products for this scope.</p>
+                                </template>
+                            </template>
+                        </section>
+                    </template>
+
+                    <!-- Probation watchlist -->
+                    <section class="probation-section">
+                        <div class="section-heading">
+                            <div>
+                                <h3 class="section-title">Probation Watchlist</h3>
+                                <p class="section-hint">Reps within 90-day probation window</p>
+                            </div>
+                            <template if:true={hasProbationReps}>
+                                <span class="probation-count-badge">{probationCountLabel}</span>
+                            </template>
+                        </div>
+                        <template if:true={hasProbationReps}>
+                            <div class="probation-grid">
+                                <template for:each={probationReps} for:item="rep">
+                                    <article key={rep.userId} class={rep.urgencyClass}>
+                                        <div class="probation-header">
+                                            <span class="probation-name">{rep.name}</span>
+                                            <span class="probation-days">{rep.daysLabel}</span>
+                                        </div>
+                                        <div class="probation-meta">
+                                            <span>{rep.territoryLine}</span>
+                                            <span>Hired {rep.hireDateDisplay}</span>
+                                        </div>
+                                        <div class="probation-track">
+                                            <div class="probation-fill" style={rep.progressStyle}></div>
+                                        </div>
+                                    </article>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:false={hasProbationReps}>
+                            <div class="empty-state">
+                                <lightning-icon icon-name="utility:check" size="small"></lightning-icon>
+                                <span>No reps currently on probation in this scope</span>
+                            </div>
+                        </template>
+                    </section>
+
+                    <!-- Expandable drill-down -->
+                    <section class="drill-section">
+                        <div class="section-heading">
+                            <h3 class="section-title">Hierarchy Drill-Down</h3>
+                            <p class="section-hint">Expand rows to see districts and reps · mini bars show coverage &amp; call rate</p>
+                        </div>
+                        <template if:true={hasDrillDown}>
+                            <div class="drill-table-wrap">
+                                <table class="drill-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Level</th>
+                                            <th>Coverage</th>
+                                            <th>Call Rate</th>
+                                            <th>KOL</th>
+                                            <th>Coaching Score</th>
+                                            <th>Products</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={drillDownRows} for:item="row">
+                                            <tr key={row.key} class={row.rowClass}>
+                                                <td>
+                                                    <div class="drill-name-cell" style={row.indentStyle}>
+                                                        <template if:true={row.hasChildren}>
+                                                            <button
+                                                                type="button"
+                                                                class="drill-toggle"
+                                                                data-key={row.key}
+                                                                onclick={handleToggleRow}
+                                                                aria-label="Toggle row"
+                                                            >
+                                                                <lightning-icon
+                                                                    icon-name={row.toggleIcon}
+                                                                    size="xx-small"
+                                                                ></lightning-icon>
+                                                            </button>
+                                                        </template>
+                                                        <template if:false={row.hasChildren}>
+                                                            <span class="drill-spacer"></span>
+                                                        </template>
+                                                        <span>{row.label}</span>
+                                                    </div>
+                                                </td>
+                                                <td><span class="level-badge">{row.level}</span></td>
+                                                <td>
+                                                    <div class="mini-bar-cell">
+                                                        <span>{row.coverageDisplay}</span>
+                                                        <div class="mini-bar-track">
+                                                            <div
+                                                                class={row.coverageStatus}
+                                                                style={row.coverageBarStyle}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="mini-bar-cell">
+                                                        <span>{row.callRateDisplay}</span>
+                                                        <div class="mini-bar-track">
+                                                            <div
+                                                                class={row.callRateStatus}
+                                                                style={row.callRateBarStyle}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{row.kolDisplay}</td>
+                                                <td>
+                                                    <template if:true={row.hasCoachingScore}>
+                                                        <div class="coaching-score-cell">
+                                                            <div class="coaching-score-main">
+                                                                <span class="coaching-score-value">{row.coachingScoreDisplay}</span>
+                                                                <template if:true={row.coachingDeltaDisplay}>
+                                                                    <span class={row.coachingTrendClass}>
+                                                                        {row.coachingDeltaDisplay} {row.coachingTrendArrow}
+                                                                    </span>
+                                                                </template>
+                                                            </div>
+                                                            <template if:true={row.hasCoachingSections}>
+                                                                <div class="coaching-section-chips">
+                                                                    <template for:each={row.coachingSectionChips} for:item="section">
+                                                                        <span key={section.key} class={section.trendClass} title={section.sectionName}>
+                                                                            {section.shortName} {section.deltaDisplay} {section.arrow}
+                                                                        </span>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template if:false={row.hasCoachingScore}>
+                                                        <span class="coaching-days-fallback">{row.coachingDisplay} days</span>
+                                                    </template>
+                                                </td>
+                                                <td>
+                                                    <template if:true={row.hasProducts}>
+                                                        <div class="product-chip-row">
+                                                            <template for:each={row.visibleProducts} for:item="chip">
+                                                                <span key={chip.productId} class="product-chip" title={chip.productName}>
+                                                                    {chip.productName}
+                                                                </span>
+                                                            </template>
+                                                            <template if:true={row.showOverflow}>
+                                                                <span class="product-overflow">+{row.overflowCount}</span>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template if:false={row.hasProducts}>
+                                                        <span class="product-empty">—</span>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                        <template if:false={hasDrillDown}>
+                            <div class="empty-state">
+                                <lightning-icon icon-name="utility:info" size="small"></lightning-icon>
+                                <span>No hierarchy data for the selected filters</span>
+                            </div>
+                        </template>
+                    </section>
+                </div>
+            </template>
+        </div>
+
+        <!-- KPI drill-down modal -->
+        <template if:true={showKpiModal}>
+            <section class="kpi-modal-backdrop" onclick={handleCloseModal} role="presentation">
+                <article class={kpiModalClass} onclick={handleModalContentClick}>
+                    <header class="kpi-modal-header">
+                        <div>
+                            <h3 class="kpi-modal-title">{kpiModalTitle}</h3>
+                            <p class="kpi-modal-subtitle">{activeKpiModal.teamLabel}</p>
+                        </div>
+                        <button type="button" class="modal-close" onclick={handleCloseModal} aria-label="Close">
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="kpi-modal-body">
+                        <template if:true={isModalLoading}>
+                            <div class="mgmt-loading compact">
+                                <lightning-spinner alternative-text="Loading drill-down" size="small"></lightning-spinner>
+                            </div>
+                        </template>
+                        <template if:false={isModalLoading}>
+                            <template if:true={isProductModal}>
+                                <div class="product-modal-head">
+                                    <c-product-thumbnail
+                                        image-url={activeKpiModal.imageUrl}
+                                        product-name={activeKpiModal.title}
+                                        size="lg"
+                                    ></c-product-thumbnail>
+                                    <div class="product-modal-metrics">
+                                        <span>{activeKpiModal.visitCount} visits</span>
+                                        <span>{activeKpiModal.clmSessionCount} CLM</span>
+                                        <span>{activeKpiModal.positiveDisplay} positive</span>
+                                    </div>
+                                </div>
+
+                                <section class="product-modal-section">
+                                    <h4 class="clm-section-title">Message Sentiment</h4>
+                                    <template if:true={hasProductMessageRows}>
+                                        <div class="product-message-grid">
+                                            <template for:each={productMessageRows} for:item="message">
+                                                <article key={message.key} class="product-message-card">
+                                                    <div class="product-message-card-head">
+                                                        <span class="clm-message-name">{message.messageName}</span>
+                                                        <span class="clm-message-count">{message.responseCount}</span>
+                                                    </div>
+                                                    <div class="sentiment-pie" style={message.pieStyle} role="presentation"></div>
+                                                    <div class="sentiment-legend compact">
+                                                        <span class="sentiment-positive">{message.positiveDisplay}</span>
+                                                        <span class="sentiment-neutral">{message.neutralDisplay}</span>
+                                                        <span class="sentiment-negative">{message.negativeDisplay}</span>
+                                                    </div>
+                                                </article>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={hasProductMessageRows}>
+                                        <p class="section-hint">No message sentiment captured for this product in scope.</p>
+                                    </template>
+                                </section>
+
+                                <section class="product-modal-section">
+                                    <h4 class="clm-section-title">Top Detailing Reps</h4>
+                                    <template if:true={hasProductTopReps}>
+                                        <template for:each={productTopReps} for:item="rep">
+                                            <div key={rep.key} class="modal-row">
+                                                <span class="modal-rank">#{rep.rank}</span>
+                                                <div class="modal-row-content">
+                                                    <div class="modal-row-top">
+                                                        <span class="modal-row-name">{rep.repName}</span>
+                                                        <span class="modal-row-metric">{rep.positiveDisplay} positive</span>
+                                                    </div>
+                                                    <span class="modal-row-sub">{rep.detailLabel}</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <template if:false={hasProductTopReps}>
+                                        <p class="section-hint">No rep detailing activity for this product in scope.</p>
+                                    </template>
+                                </section>
+                            </template>
+
+                            <template if:true={isClmModal}>
+                                <template if:true={hasClmMessageSummary}>
+                                    <section class="clm-message-summary">
+                                        <h4 class="clm-section-title">Messages Tackled (MTD)</h4>
+                                        <template for:each={clmMessageSummary} for:item="message">
+                                            <div key={message.key} class="clm-message-row">
+                                                <div class="clm-message-head">
+                                                    <div>
+                                                        <span class="clm-message-name">{message.messageName}</span>
+                                                        <template if:true={message.showProduct}>
+                                                            <span class="clm-message-product">{message.productName}</span>
+                                                        </template>
+                                                    </div>
+                                                    <span class="clm-message-count">{message.responseCount} responses</span>
+                                                </div>
+                                                <div class="sentiment-stack" role="presentation">
+                                                    <div class="sentiment-segment sentiment-positive" style={message.positiveBarStyle} title={message.positiveDisplay}></div>
+                                                    <div class="sentiment-segment sentiment-neutral" style={message.neutralBarStyle} title={message.neutralDisplay}></div>
+                                                    <div class="sentiment-segment sentiment-negative" style={message.negativeBarStyle} title={message.negativeDisplay}></div>
+                                                </div>
+                                                <div class="sentiment-legend">
+                                                    <span class="sentiment-positive">{message.positiveDisplay} positive</span>
+                                                    <span class="sentiment-neutral">{message.neutralDisplay} neutral</span>
+                                                    <span class="sentiment-negative">{message.negativeDisplay} negative</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </section>
+                                </template>
+
+                                <template if:true={showClmDeckDrill}>
+                                    <section class="clm-drill-section">
+                                        <h4 class="clm-section-title">Deck Library</h4>
+                                        <template if:true={hasClmDeckRows}>
+                                            <template for:each={clmDeckRows} for:item="deck">
+                                                <article key={deck.key} class="clm-drill-card">
+                                                    <div class="clm-drill-card-head">
+                                                        <div>
+                                                            <span class="clm-drill-title">{deck.presentationName}</span>
+                                                            <template if:true={deck.productName}>
+                                                                <span class="clm-drill-subtitle">{deck.productName}</span>
+                                                            </template>
+                                                        </div>
+                                                        <div class="clm-drill-metrics">
+                                                            <span class={deck.statusClass}>{deck.statusLabel}</span>
+                                                            <span class="clm-metric-pill">{deck.sessionCount} sessions</span>
+                                                        </div>
+                                                    </div>
+                                                    <template if:true={deck.hasMessages}>
+                                                        <div class="clm-inline-messages">
+                                                            <template for:each={deck.messages} for:item="message">
+                                                                <div key={message.key} class="clm-inline-message">
+                                                                    <span class="clm-inline-message-name">{message.messageName}</span>
+                                                                    <div class="sentiment-stack compact" role="presentation">
+                                                                        <div class="sentiment-segment sentiment-positive" style={message.positiveBarStyle}></div>
+                                                                        <div class="sentiment-segment sentiment-neutral" style={message.neutralBarStyle}></div>
+                                                                        <div class="sentiment-segment sentiment-negative" style={message.negativeBarStyle}></div>
+                                                                    </div>
+                                                                    <span class="clm-inline-sentiment">{message.positiveDisplay} positive</span>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </template>
+                                        <template if:false={hasClmDeckRows}>
+                                            <p class="section-hint">No CLM decks found in the library.</p>
+                                        </template>
+                                    </section>
+                                </template>
+
+                                <template if:true={showClmSessionDrill}>
+                                    <section class="clm-drill-section">
+                                        <h4 class="clm-section-title">Session Log</h4>
+                                        <template if:true={hasClmSessionRows}>
+                                            <template for:each={clmSessionRows} for:item="session">
+                                                <article key={session.key} class="clm-drill-card">
+                                                    <div class="clm-drill-card-head">
+                                                        <div>
+                                                            <span class="clm-drill-title">{session.presentationName}</span>
+                                                            <span class="clm-drill-subtitle">{session.metaLabel}</span>
+                                                        </div>
+                                                    </div>
+                                                    <template if:true={session.hasMessages}>
+                                                        <div class="clm-message-chips">
+                                                            <template for:each={session.messages} for:item="message">
+                                                                <span key={message.key} class={message.sentimentClass}>
+                                                                    {message.messageName} · {message.sentimentLabel}
+                                                                </span>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template if:false={session.hasMessages}>
+                                                        <p class="section-hint">No message feedback captured for this session.</p>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </template>
+                                        <template if:false={hasClmSessionRows}>
+                                            <p class="section-hint">No completed CLM sessions in this scope for the current month.</p>
+                                        </template>
+                                    </section>
+                                </template>
+
+                                <template if:true={showClmAdoptionDrill}>
+                                    <section class="clm-drill-section">
+                                        <h4 class="clm-section-title">Rep Adoption</h4>
+                                        <template if:true={hasClmRepRows}>
+                                            <template for:each={clmRepRows} for:item="rep">
+                                                <article key={rep.key} class="clm-drill-card">
+                                                    <div class="clm-drill-card-head">
+                                                        <div>
+                                                            <span class="clm-drill-title">#{rep.rank} {rep.repName}</span>
+                                                            <span class="clm-drill-subtitle">
+                                                                {rep.sessionCount} sessions · {rep.visitCount} visits · {rep.decksUsed} decks
+                                                            </span>
+                                                        </div>
+                                                        <span class="clm-metric-pill">{rep.adoptionDisplay}</span>
+                                                    </div>
+                                                    <template if:true={rep.hasMessages}>
+                                                        <div class="clm-inline-messages">
+                                                            <template for:each={rep.messages} for:item="message">
+                                                                <div key={message.key} class="clm-inline-message">
+                                                                    <span class="clm-inline-message-name">{message.messageName}</span>
+                                                                    <div class="sentiment-stack compact" role="presentation">
+                                                                        <div class="sentiment-segment sentiment-positive" style={message.positiveBarStyle}></div>
+                                                                        <div class="sentiment-segment sentiment-neutral" style={message.neutralBarStyle}></div>
+                                                                        <div class="sentiment-segment sentiment-negative" style={message.negativeBarStyle}></div>
+                                                                    </div>
+                                                                    <span class="clm-inline-sentiment">{message.positiveDisplay} positive</span>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </article>
+                                            </template>
+                                        </template>
+                                        <template if:false={hasClmRepRows}>
+                                            <p class="section-hint">No rep adoption data for the current month.</p>
+                                        </template>
+                                    </section>
+                                </template>
+                            </template>
+
+                            <template if:true={isWorkforceModal}>
+                                <template if:true={kpiModalHasRows}>
+                                    <template for:each={kpiModalRows} for:item="row">
+                                        <div key={row.key} class="modal-row">
+                                            <span class="modal-rank">#{row.rank}</span>
+                                            <div class="modal-row-content">
+                                                <div class="modal-row-top">
+                                                    <div class="modal-name-row">
+                                                        <span class="modal-row-name">{row.label}</span>
+                                                        <template if:true={row.sublabel}>
+                                                            <span class="modal-row-sub">{row.sublabel}</span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="modal-metric-stack">
+                                                        <span class="modal-row-metric">{row.value}</span>
+                                                        <template if:true={row.metricHint}>
+                                                            <span class="modal-row-hint">{row.metricHint}</span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                <template if:true={row.showBar}>
+                                                    <div class="modal-bar-track" role="presentation">
+                                                        <div class="modal-bar-fill" style={row.barFillStyle}></div>
+                                                    </div>
+                                                </template>
+                                                <template if:true={row.coverageDisplay}>
+                                                    <div class="modal-extra-metrics">
+                                                        <span>Coverage {row.coverageDisplay}</span>
+                                                        <span>Call rate {row.callRateDisplay}</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={kpiModalHasRows}>
+                                    <p class="section-hint">No roster data for the selected scope.</p>
+                                </template>
+                            </template>
+
+                            <template if:true={isCoachingModal}>
+                                <div class="coaching-modal-summary">
+                                    <span class="coaching-modal-team-score">{activeKpiModal.teamLatestDisplay}</span>
+                                    <template if:true={activeKpiModal.teamTrendLabel}>
+                                        <span class={activeKpiModal.teamTrendClass}>
+                                            {activeKpiModal.teamTrendLabel} {activeKpiModal.teamTrendArrow}
+                                        </span>
+                                    </template>
+                                </div>
+                                <template if:true={hasCoachingModalRows}>
+                                    <template for:each={coachingModalRows} for:item="rep">
+                                        <article key={rep.key} class="coaching-rep-card">
+                                            <div class="coaching-rep-head">
+                                                <div>
+                                                    <span class="coaching-rep-rank">#{rep.rank}</span>
+                                                    <span class="coaching-rep-name">{rep.repName}</span>
+                                                </div>
+                                                <div class="coaching-rep-metrics">
+                                                    <span class="coaching-rep-score">{rep.latestDisplay}</span>
+                                                    <template if:true={rep.deltaDisplay}>
+                                                        <span class={rep.trendClass}>{rep.deltaDisplay} {rep.arrow}</span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <div class="coaching-rep-sparkline" aria-hidden="true">
+                                                <template for:each={rep.monthlyScores} for:item="point">
+                                                    <div key={point.key} class="coaching-spark-column">
+                                                        <span class="coaching-spark-label">{point.scoreLabel}</span>
+                                                        <div class="coaching-spark-track">
+                                                            <div class="coaching-spark-bar" style={point.barStyle}></div>
+                                                        </div>
+                                                        <span class="coaching-spark-month">{point.monthLabel}</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <template if:true={rep.hasSectionTrends}>
+                                                <div class="coaching-section-grid">
+                                                    <template for:each={rep.sectionTrends} for:item="section">
+                                                        <div key={section.key} class="coaching-section-card">
+                                                            <span class="coaching-section-name">{section.sectionName}</span>
+                                                            <div class="coaching-section-metrics">
+                                                                <span>{section.latestDisplay}</span>
+                                                                <span class={section.trendClass}>{section.deltaDisplay} {section.arrow}</span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </article>
+                                    </template>
+                                </template>
+                                <template if:false={hasCoachingModalRows}>
+                                    <p class="section-hint">No closed coaching events in scope for the last 6 months.</p>
+                                </template>
+                            </template>
+
+                            <template if:false={isClmModal}>
+                                <template if:false={isWorkforceModal}>
+                                    <template if:false={isProductModal}>
+                                    <template if:false={isCoachingModal}>
+                                    <template if:true={kpiModalHasRows}>
+                                        <template for:each={kpiModalRows} for:item="row">
+                                            <div key={row.key} class="modal-row">
+                                                <span class="modal-rank">#{row.rank}</span>
+                                                <div class="modal-row-content">
+                                                    <div class="modal-row-top">
+                                                        <div class="modal-name-row">
+                                                            <span class="modal-row-name">{row.label}</span>
+                                                            <template if:true={row.isOnProbation}>
+                                                                <span class={row.probationClass}>{row.probationLabel}</span>
+                                                            </template>
+                                                        </div>
+                                                        <span class="modal-row-metric">{row.value}</span>
+                                                    </div>
+                                                    <template if:true={row.showBar}>
+                                                        <div class="modal-bar-track" role="presentation">
+                                                            <div class="modal-bar-fill" style={row.barFillStyle}></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <template if:false={kpiModalHasRows}>
+                                        <p class="section-hint">No rep-level data available. Try selecting a district to see individual reps.</p>
+                                    </template>
+                                    </template>
+                                    </template>
+                                </template>
+                            </template>
+                        </template>
+                    </div>
+                </article>
+            </section>
+        </template>
+
+        <template if:true={showBroadcastModal}>
+            <section class="kpi-modal-backdrop" onclick={handleCloseBroadcastModal} role="presentation">
+                <article class="kpi-modal broadcast-modal" onclick={handleModalContentClick}>
+                    <header class="kpi-modal-header">
+                        <div>
+                            <h3 class="kpi-modal-title">Broadcast Home Office Message</h3>
+                            <p class="kpi-modal-subtitle">Publish a message to the field force feed</p>
+                        </div>
+                        <button type="button" class="modal-close" onclick={handleCloseBroadcastModal} aria-label="Close">
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                    </header>
+                    <div class="kpi-modal-body">
+                        <lightning-combobox
+                            label="Audience"
+                            value={broadcastScope}
+                            options={broadcastScopeOptions}
+                            onchange={handleBroadcastScopeChange}
+                        ></lightning-combobox>
+                        <lightning-combobox
+                            label="Priority"
+                            value={broadcastPriority}
+                            options={broadcastPriorityOptions}
+                            onchange={handleBroadcastPriorityChange}
+                        ></lightning-combobox>
+                        <lightning-input
+                            label="Subject"
+                            value={broadcastSubject}
+                            onchange={handleBroadcastSubjectChange}
+                        ></lightning-input>
+                        <lightning-textarea
+                            label="Message"
+                            value={broadcastBody}
+                            onchange={handleBroadcastBodyChange}
+                        ></lightning-textarea>
+                        <template if:true={broadcastError}>
+                            <p class="slds-text-color_error slds-m-top_small">{broadcastError}</p>
+                        </template>
+                        <template if:true={broadcastSuccess}>
+                            <p class="broadcast-success slds-m-top_small">{broadcastSuccess}</p>
+                        </template>
+                        <div class="broadcast-actions">
+                            <lightning-button
+                                variant="brand"
+                                label="Publish Message"
+                                onclick={handlePublishBroadcast}
+                                disabled={isPublishing}
+                            ></lightning-button>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </template>
+    </article>
+</template>

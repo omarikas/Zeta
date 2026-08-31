@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Span_Duration_Days_Range</fullName>
+    <active>true</active>
+    <description>When Span Type is Days, internal numeric duration must be 1–90 (normally set from the Span Duration dropdown).</description>
+    <errorConditionFormula>AND(
+  ISPICKVAL(Span_Type__c, &quot;Days&quot;),
+  NOT(ISBLANK(Span_Duration__c)),
+  OR(
+    Span_Duration__c &lt; 1,
+    Span_Duration__c &gt; 90
+  )
+)</errorConditionFormula>
+    <errorDisplayField>Span_Duration_Select__c</errorDisplayField>
+    <errorMessage>For Days, choose a duration from 1 to 90.</errorMessage>
+</ValidationRule>

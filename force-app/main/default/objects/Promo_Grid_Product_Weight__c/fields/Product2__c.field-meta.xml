@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Product2__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Product included in this Line Promo Grid weight allocation.</description>
+    <label>Product</label>
+    <referenceTo>Product2</referenceTo>
+    <relationshipLabel>Promo Grid Product Weights</relationshipLabel>
+    <relationshipName>Promo_Grid_Product_Weights</relationshipName>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

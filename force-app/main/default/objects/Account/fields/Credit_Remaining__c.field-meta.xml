@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Credit_Remaining__c</fullName>
+    <description>What: Demo OMS Credit Limit &amp; Hold
+Who: Bill Macaulay When: March 2023</description>
+    <formula>CreditLimit__c -  Credit_Balance__c</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Credit Remaining</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <type>Currency</type>
+</CustomField>

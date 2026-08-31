@@ -1,0 +1,123 @@
+<template>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open inquiry-modal">
+        <div class="slds-modal__container inquiry-modal-container">
+            <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">Record Medical Inquiry</h2>
+                <p class="slds-text-body_small slds-m-top_x-small inquiry-subtitle">
+                    Capture an HCP product question during this visit and route it to Medical Affairs.
+                </p>
+            </header>
+
+            <div class="slds-modal__content slds-p-around_medium">
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Loading medical inquiry form" size="medium"></lightning-spinner>
+                </template>
+
+                <template if:false={isLoading}>
+                    <template if:true={errorMessage}>
+                        <p class="inquiry-error">{errorMessage}</p>
+                    </template>
+
+                    <template if:false={errorMessage}>
+                        <div class="inquiry-meta-grid">
+                            <div class="meta-item">
+                                <span class="meta-label">Visit</span>
+                                <span class="meta-value">{visitName}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Account</span>
+                                <span class="meta-value">{accountName}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Field Rep</span>
+                                <span class="meta-value">{assignedToName}</span>
+                            </div>
+                        </div>
+
+                        <template if:true={isLocked}>
+                            <div class="locked-note slds-m-top_medium">
+                                This visit is completed or cancelled. Existing inquiries are shown below in read-only mode.
+                            </div>
+                        </template>
+
+                        <template if:true={showIntakeForm}>
+                            <lightning-combobox
+                                class="slds-m-top_medium"
+                                label="Inquirer"
+                                value={selectedInquirerId}
+                                options={inquirerOptions}
+                                onchange={handleInquirerChange}
+                                placeholder="Select inquirer"
+                                required
+                            ></lightning-combobox>
+                            <lightning-combobox
+                                class="slds-m-top_small"
+                                label="Product"
+                                value={selectedProductId}
+                                options={productOptions}
+                                onchange={handleProductChange}
+                                placeholder="Select product"
+                                required
+                            ></lightning-combobox>
+                            <lightning-combobox
+                                class="slds-m-top_small"
+                                label="Question Category"
+                                value={selectedCategory}
+                                options={categoryOptions}
+                                onchange={handleCategoryChange}
+                                placeholder="Select category"
+                                required
+                            ></lightning-combobox>
+                            <lightning-textarea
+                                class="slds-m-top_small"
+                                label="Question Text"
+                                value={questionText}
+                                onchange={handleQuestionChange}
+                                placeholder="Enter the HCP question in their own words"
+                                required
+                            ></lightning-textarea>
+                        </template>
+
+                        <template if:true={hasExistingInquiries}>
+                            <div class="inquiry-list-wrap slds-m-top_medium">
+                                <h3 class="inquiry-list-title">Inquiries on this visit</h3>
+                                <ul class="inquiry-list">
+                                    <template for:each={existingInquiries} for:item="inquiry">
+                                        <li key={inquiry.caseId} class="inquiry-list-item">
+                                            <button
+                                                type="button"
+                                                class="inquiry-link"
+                                                data-case-id={inquiry.caseId}
+                                                onclick={handleOpenCase}
+                                            >
+                                                {inquiry.caseNumber}
+                                            </button>
+                                            <span class="inquiry-meta">
+                                                {inquiry.productName} · {inquiry.questionCategory} · {inquiry.status}
+                                            </span>
+                                            <span class="inquiry-date">{inquiry.createdLabel}</span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </template>
+                </template>
+            </div>
+
+            <footer class="slds-modal__footer">
+                <lightning-button label="Close" onclick={handleClose}></lightning-button>
+                <template if:true={showIntakeForm}>
+                    <lightning-button
+                        class="slds-m-left_x-small"
+                        label="Submit Medical Inquiry"
+                        variant="brand"
+                        onclick={handleSubmit}
+                        disabled={submitDisabled}
+                    ></lightning-button>
+                </template>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

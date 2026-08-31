@@ -1,0 +1,251 @@
+<template>
+    <section class="pm-hub">
+        <header class="pm-hub-header">
+            <div class="pm-hub-header-icon" aria-hidden="true">
+                <lightning-icon icon-name="utility:strategy" size="small"></lightning-icon>
+            </div>
+            <div class="pm-hub-header-text">
+                <h1 class="pm-hub-header-title">Project Management</h1>
+                <p class="pm-hub-header-subtitle">
+                    Executive portfolio view across business units, budgets, and delivery progress.
+                </p>
+            </div>
+            <div class="pm-hub-header-actions">
+                <lightning-button
+                    label="New Project"
+                    variant="brand"
+                    icon-name="utility:add"
+                    onclick={handleNewProject}
+                ></lightning-button>
+            </div>
+        </header>
+
+        <div class="pm-hub-body">
+            <div class="pm-hub-filters">
+                <lightning-combobox
+                    label="Business Unit"
+                    value={selectedBu}
+                    options={buOptions}
+                    onchange={handleBuChange}
+                ></lightning-combobox>
+                <lightning-combobox
+                    label="Status"
+                    value={selectedStatus}
+                    options={statusOptions}
+                    onchange={handleStatusChange}
+                ></lightning-combobox>
+            </div>
+
+            <div class="pm-hub-section-header">
+                <span class="pm-hub-section-label">Portfolio</span>
+                <span class="pm-hub-section-count">{projectCountLabel}</span>
+            </div>
+
+            <template if:true={error}>
+                <div class="pm-hub-alert pm-hub-alert--error" role="alert">{error}</div>
+            </template>
+
+            <template if:true={isLoading}>
+                <div class="pm-hub-loading">
+                    <lightning-spinner alternative-text="Loading projects" size="small"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={showInitialEmpty}>
+                <div class="pm-hub-empty">
+                    <lightning-icon icon-name="utility:strategy" size="large"></lightning-icon>
+                    <h2>No projects yet</h2>
+                    <p>Create your first project to track budgets, milestones, and team delivery.</p>
+                    <lightning-button
+                        label="Create Project"
+                        variant="brand"
+                        onclick={handleNewProject}
+                    ></lightning-button>
+                </div>
+            </template>
+
+            <template if:true={showFilteredEmpty}>
+                <div class="pm-hub-empty pm-hub-empty--compact">
+                    <p>No projects match the selected filters.</p>
+                </div>
+            </template>
+
+            <template if:true={hasProjects}>
+                <div class="pm-hub-cards-grid">
+                    <template for:each={projects} for:item="project">
+                        <article
+                            key={project.id}
+                            class="pm-hub-card"
+                            data-id={project.id}
+                            onclick={handleProjectClick}
+                            onkeydown={handleProjectKeydown}
+                            role="button"
+                            tabindex="0"
+                            aria-label={project.name}
+                        >
+                            <div class="pm-hub-card-top">
+                                <div class="pm-hub-card-title-wrap">
+                                    <div class="pm-hub-card-title-row">
+                                        <span class={project.typeIconClass} aria-hidden="true">
+                                            <lightning-icon icon-name={project.typeIconName} size="x-small"></lightning-icon>
+                                        </span>
+                                        <h3 class="pm-hub-card-title">{project.name}</h3>
+                                    </div>
+                                    <p class="pm-hub-card-meta">{project.recordTypeName}</p>
+                                </div>
+                                <span class={project.statusClass}>{project.status}</span>
+                            </div>
+
+                            <div class="pm-hub-card-chips">
+                                <span class={project.buChipClass}>{project.businessUnit}</span>
+                                <template if:true={project.campaignType}>
+                                    <span class="pm-hub-campaign-chip">{project.campaignType}</span>
+                                </template>
+                            </div>
+
+                            <div class="pm-hub-metric">
+                                <div class="pm-hub-metric-label">
+                                    <span>Round tables</span>
+                                    <span>{project.roundTableDisplay}</span>
+                                </div>
+                                <div class="pm-hub-progress-track">
+                                    <div class="pm-hub-progress-fill pm-hub-progress-fill--blue" style={project.progressBarStyle}></div>
+                                </div>
+                                <p class="pm-hub-metric-caption">{project.progressDisplay} complete</p>
+                            </div>
+
+                            <div class="pm-hub-metric">
+                                <div class="pm-hub-metric-label">
+                                    <span>Budget</span>
+                                    <span>{project.budgetDisplay}</span>
+                                </div>
+                                <div class="pm-hub-progress-track">
+                                    <div class="pm-hub-progress-fill pm-hub-progress-fill--teal" style={project.budgetBarStyle}></div>
+                                </div>
+                                <p class="pm-hub-metric-caption">{project.budgetPercentDisplay}</p>
+                            </div>
+
+                            <div class="pm-hub-card-footer">
+                                <span>Open tasks: {project.openTaskDisplay}</span>
+                                <span>Team: {project.teamSizeDisplay}</span>
+                            </div>
+
+                            <template if:true={project.kpis}>
+                                <ul class="pm-hub-kpi-list">
+                                    <template for:each={project.kpis} for:item="kpi">
+                                        <li key={kpi.id} class="pm-hub-kpi-item">
+                                            <div class="pm-hub-kpi-label">
+                                                <span>{kpi.kpiName}</span>
+                                                <span>{kpi.actualValue} / {kpi.targetValue} {kpi.unit}</span>
+                                            </div>
+                                            <div class="pm-hub-progress-track">
+                                                <div class="pm-hub-progress-fill pm-hub-progress-fill--indigo" style={kpi.kpiBarStyle}></div>
+                                            </div>
+                                            <p class="pm-hub-metric-caption">{kpi.attainmentDisplay} attainment</p>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </article>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <template if:true={showCreateModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open pm-hub-create-modal">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Create Project</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="pm-hub-create-grid">
+                        <lightning-input
+                            label="Project Name"
+                            value={createForm.name}
+                            data-field="name"
+                            required
+                            onchange={handleCreateFieldChange}
+                        ></lightning-input>
+                        <lightning-combobox
+                            label="Project Type"
+                            value={createForm.recordTypeDeveloperName}
+                            options={recordTypeOptions}
+                            data-field="recordTypeDeveloperName"
+                            required
+                            onchange={handleCreateFieldChange}
+                        ></lightning-combobox>
+                        <lightning-combobox
+                            label="Status"
+                            value={createForm.status}
+                            options={createStatusOptions}
+                            data-field="status"
+                            onchange={handleCreateFieldChange}
+                        ></lightning-combobox>
+                        <lightning-combobox
+                            label="Business Unit"
+                            value={createForm.businessUnit}
+                            options={filterBuOptions}
+                            data-field="businessUnit"
+                            required
+                            onchange={handleCreateFieldChange}
+                        ></lightning-combobox>
+                        <template if:true={showCampaignTypeField}>
+                            <lightning-combobox
+                                label="Campaign Type"
+                                value={createForm.campaignType}
+                                options={campaignTypeOptions}
+                                data-field="campaignType"
+                                onchange={handleCreateFieldChange}
+                            ></lightning-combobox>
+                        </template>
+                        <lightning-input
+                            type="date"
+                            label="Start Date"
+                            value={createForm.startDate}
+                            data-field="startDate"
+                            onchange={handleCreateFieldChange}
+                        ></lightning-input>
+                        <lightning-input
+                            type="date"
+                            label="End Date"
+                            value={createForm.endDate}
+                            data-field="endDate"
+                            onchange={handleCreateFieldChange}
+                        ></lightning-input>
+                        <lightning-input
+                            type="number"
+                            label="Total Budget"
+                            value={createForm.totalBudget}
+                            data-field="totalBudget"
+                            formatter="currency"
+                            step="0.01"
+                            onchange={handleCreateFieldChange}
+                        ></lightning-input>
+                        <lightning-textarea
+                            label="Description"
+                            value={createForm.description}
+                            data-field="description"
+                            onchange={handleCreateFieldChange}
+                        ></lightning-textarea>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Cancel"
+                        onclick={handleCloseCreateModal}
+                        disabled={isSaving}
+                    ></lightning-button>
+                    <lightning-button
+                        label="Create Project"
+                        variant="brand"
+                        onclick={handleCreateProject}
+                        disabled={isSaving}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

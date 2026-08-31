@@ -1,0 +1,59 @@
+<template>
+    <section role="dialog" tabindex="-1" class={dialogClass} aria-modal="true">
+        <div class="slds-modal__container picker-modal-container">
+            <header class="slds-modal__header">
+                <button
+                    class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                    title="Close"
+                    onclick={handleClose}
+                >
+                    <lightning-icon icon-name="utility:close" size="small" alternative-text="Close"></lightning-icon>
+                </button>
+                <h2 class="slds-modal__title slds-hyphenate">{title}</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-input
+                    type="search"
+                    label="Search"
+                    value={searchTerm}
+                    onchange={handleSearchChange}
+                    placeholder="Search accounts in your territory"
+                ></lightning-input>
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Loading" size="small" class="slds-m-top_medium"></lightning-spinner>
+                </template>
+                <ul class="picker-list slds-m-top_small">
+                    <template for:each={candidates} for:item="row">
+                        <li key={row.accountId} class="picker-row">
+                            <div class="picker-row-main">
+                                <span class="picker-badge">{row.accountTypeLabel}</span>
+                                <div>
+                                    <p class="picker-name">{row.accountName}</p>
+                                    <p class="picker-meta">
+                                        <template if:true={row.specialty}>{row.specialty} · </template>
+                                        {row.source}
+                                    </p>
+                                </div>
+                            </div>
+                            <lightning-button
+                                label="Add"
+                                variant="brand"
+                                data-id={row.accountId}
+                                onclick={handleSelect}
+                            ></lightning-button>
+                        </li>
+                    </template>
+                </ul>
+                <template if:false={isLoading}>
+                    <template if:false={candidates.length}>
+                        <p class="slds-text-color_weak slds-m-top_small">No accounts found.</p>
+                    </template>
+                </template>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Close" onclick={handleClose}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class={backdropClass}></div>
+</template>

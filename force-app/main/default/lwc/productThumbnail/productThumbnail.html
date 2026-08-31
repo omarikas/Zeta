@@ -1,0 +1,20 @@
+<template>
+    <div class={containerClass} title={productName}>
+        <template if:true={hasImage}>
+            <img
+                src={imageUrl}
+                alt={altText}
+                class="thumb-image"
+                onerror={handleImageError}
+            />
+        </template>
+        <template if:false={hasImage}>
+            <lightning-icon
+                icon-name="utility:product"
+                size="x-small"
+                class="thumb-fallback-icon"
+                alternative-text={altText}
+            ></lightning-icon>
+        </template>
+    </div>
+</template>

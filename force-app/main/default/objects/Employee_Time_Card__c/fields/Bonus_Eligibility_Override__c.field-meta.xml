@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Bonus_Eligibility_Override__c</fullName>
+    <description>Override KPI-suggested bonus eligibility for this month.</description>
+    <label>Bonus Eligibility Override</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetName>Compensation_Eligibility_Override</valueSetName>
+    </valueSet>
+</CustomField>
