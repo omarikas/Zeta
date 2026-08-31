@@ -20,6 +20,9 @@
 !.github/
 !.github/workflows/**
 
+# Unignore vercel.json for CORS configuration
+!vercel.json
+
 # Salesforce cache
 .sf/
 .sfdx/
