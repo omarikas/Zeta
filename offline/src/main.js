@@ -103,7 +103,6 @@ function generateState() {
 }
 
 // Vercel function URL for token proxy (avoids CORS)
-// After deploying to Vercel, replace with your actual URL
 const TOKEN_PROXY_URL = 'https://zeta-pwa.vercel.app/api/sf-token';
 
 async function exchangeCodeForToken(code) {

@@ -69,3 +69,4 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+.vercel
