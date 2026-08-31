@@ -56,14 +56,42 @@ function configureRuntime(token, refreshToken = null, instanceUrl = null) {
     }
 }
 
-// OAuth Functions
-function generateAuthUrl() {
+// OAuth Functions with PKCE
+function generateCodeVerifier() {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return base64UrlEncode(array);
+}
+
+function base64UrlEncode(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function generateCodeChallenge(verifier) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return base64UrlEncode(digest);
+}
+
+async function generateAuthUrl() {
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    window.localStorage.setItem('oauth_code_verifier', codeVerifier);
+
     const params = new URLSearchParams({
         response_type: 'code',
         client_id: OAUTH_CONFIG.clientId,
         redirect_uri: OAUTH_CONFIG.callbackUrl,
         scope: OAUTH_CONFIG.scopes,
-        state: generateState()
+        state: generateState(),
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256'
     });
     return `${OAUTH_CONFIG.loginUrl}/services/oauth2/authorize?${params.toString()}`;
 }
@@ -75,13 +103,17 @@ function generateState() {
 }
 
 async function exchangeCodeForToken(code) {
+    const codeVerifier = window.localStorage.getItem('oauth_code_verifier');
+    window.localStorage.removeItem('oauth_code_verifier');
+
     const tokenUrl = `${OAUTH_CONFIG.loginUrl}/services/oauth2/token`;
     const params = new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: OAUTH_CONFIG.clientId,
         client_secret: '80B2C3107CC53215C621676D854B96C93E8F8B03D6C4DD5E23000E4F2AA37F51',
         redirect_uri: OAUTH_CONFIG.callbackUrl,
-        code: code
+        code: code,
+        code_verifier: codeVerifier
     });
 
     const response = await fetch(tokenUrl, {
@@ -137,8 +169,8 @@ function handleOAuthCallback() {
     return null;
 }
 
-function login() {
-    window.location.href = generateAuthUrl();
+async function login() {
+    window.location.href = await generateAuthUrl();
 }
 
 function logout() {
