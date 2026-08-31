@@ -221,8 +221,11 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, root, '');
     const instanceUrl = env.VITE_SF_INSTANCE_URL || 'https://zetapharma.my.salesforce.com';
 
+    const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
+
     return {
         root,
+        base: isGitHubPages ? '/Zeta/' : '/',
         publicDir: 'public',
         plugins: [
             compileSfdxLwc(),
