@@ -2,6 +2,18 @@
     color-scheme: light;
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: #f3f3f3;
+    --sf-blue: #0176d3;
+    --sf-blue-dark: #032d60;
+    --sf-surface: #fff;
+    --sf-bg: #f3f3f3;
+    --sf-text: #181818;
+    --sf-muted: #706e6b;
+    --sf-border: #e5e5e5;
+    --sf-bottom: #fff;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
 }
 
 html,
@@ -15,6 +27,7 @@ body {
     max-width: 88rem;
     margin: 0 auto;
     padding: 1rem;
+    padding-bottom: calc(64px + var(--safe-bottom) + 1rem);
 }
 
 .view-panel {
@@ -40,6 +53,7 @@ body {
     background: #032d60;
     color: #fff;
     padding: 0.5rem 1.25rem;
+    padding-top: calc(0.5rem + var(--safe-top));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -176,4 +190,90 @@ body {
     margin: 0;
     font-size: 0.75rem;
     opacity: 0.85;
+}
+
+/* —— Bottom Navigation Bar —— */
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    background: var(--sf-bottom);
+    border-top: 1px solid var(--sf-border);
+    padding-bottom: var(--safe-bottom);
+    z-index: 120;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.bottom-nav-item {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 4px;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--sf-muted);
+    font-size: 10px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.bottom-nav-item.active {
+    color: var(--sf-blue);
+    font-weight: 700;
+}
+
+.bottom-nav-item .nav-glyph {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.bottom-nav-item.active .nav-glyph {
+    box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.35);
+}
+
+.bottom-nav-item .nav-label {
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* —— Responsive: Hide top nav tabs on mobile, show bottom nav —— */
+@media (max-width: 768px) {
+    .app-nav .nav-tabs {
+        display: none;
+    }
+    
+    .app-nav .nav-actions {
+        display: none;
+    }
+    
+    .app-shell {
+        padding: 0.75rem;
+        padding-bottom: calc(64px + var(--safe-bottom) + 0.75rem);
+    }
+}
+
+@media (min-width: 769px) {
+    .bottom-nav {
+        display: none;
+    }
+    
+    .app-shell {
+        padding-bottom: 1rem;
+    }
 }

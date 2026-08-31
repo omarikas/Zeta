@@ -229,6 +229,7 @@ function switchTab(tab) {
     const plannerPanel = document.getElementById('view-planner');
     const visitsPanel = document.getElementById('view-visits');
 
+    // Update top nav tabs
     homeBtn?.classList.remove('nav-tab-active');
     homeBtn?.setAttribute('aria-selected', 'false');
     accountsBtn?.classList.remove('nav-tab-active');
@@ -237,6 +238,14 @@ function switchTab(tab) {
     plannerBtn?.setAttribute('aria-selected', 'false');
     visitsBtn?.classList.remove('nav-tab-active');
     visitsBtn?.setAttribute('aria-selected', 'false');
+
+    // Update bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tab) {
+            btn.classList.add('active');
+        }
+    });
 
     homePanel?.classList.remove('active');
     accountsPanel?.classList.remove('active');
@@ -315,6 +324,7 @@ function registerServiceWorker() {
 }
 
 function setupNavigation() {
+    // Top nav tabs
     const homeBtn = document.getElementById('tab-btn-home');
     const accountsBtn = document.getElementById('tab-btn-accounts');
     const plannerBtn = document.getElementById('tab-btn-planner');
@@ -324,6 +334,14 @@ function setupNavigation() {
     accountsBtn?.addEventListener('click', () => switchTab('accounts'));
     plannerBtn?.addEventListener('click', () => switchTab('planner'));
     visitsBtn?.addEventListener('click', () => switchTab('visits'));
+
+    // Bottom nav tabs
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            if (tab) switchTab(tab);
+        });
+    });
 }
 
 function setupSessionBar(token) {
@@ -331,6 +349,7 @@ function setupSessionBar(token) {
     const loginBtn = document.getElementById('login-btn');
     const nav = document.getElementById('app-nav');
     const logoutBtn = document.getElementById('logout-btn');
+    const bottomNav = document.getElementById('bottom-nav');
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
@@ -349,8 +368,14 @@ function setupSessionBar(token) {
         if (nav) {
             nav.hidden = true;
         }
+        if (bottomNav) {
+            bottomNav.hidden = true;
+        }
     } else if (nav) {
         nav.hidden = false;
+        if (bottomNav) {
+            bottomNav.hidden = false;
+        }
     }
 }
 

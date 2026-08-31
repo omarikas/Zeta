@@ -11,8 +11,8 @@
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon.svg" />
-      <script type="module" crossorigin src="/assets/index-CPOY-H4J.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-e-krB9L5.css">
+      <script type="module" crossorigin src="/assets/index-dxjzHGUU.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-ed7dvoGI.css">
     </head>
     <body>
         <header id="app-nav" class="app-nav" hidden>
@@ -44,27 +44,20 @@
         </header>
 
         <div id="session-bar" class="session-bar" hidden>
-            <form id="session-form" class="session-form">
-                <label>
-                    Access token
-                    <input
-                        id="token-input"
-                        name="token"
-                        type="password"
-                        autocomplete="off"
-                        placeholder="Salesforce access token"
-                    />
-                </label>
-                <button type="submit">Connect</button>
+            <div class="session-form">
+                <h2>Sign in to Salesforce</h2>
+                <button id="login-btn" class="login-btn" type="button">
+                    Sign in with Salesforce
+                </button>
                 <p class="session-hint">
-                    Paste a Connected App access token. The PWA calls
+                    Click to sign in with your Salesforce credentials. The PWA calls
                     <code>/services/apexrest/planner/v1/home/dashboard</code>,
                     <code>/services/apexrest/planner/v1/home/today-plan</code>,
                     <code>/services/apexrest/planner/v1/home/next-best-customers</code>,
                     and
                     <code>/services/apexrest/planner/v1/week</code>.
                 </p>
-            </form>
+            </div>
         </div>
         <main id="app" class="app-shell">
             <div id="view-home" class="view-panel active"></div>
@@ -72,5 +65,26 @@
             <div id="view-planner" class="view-panel"></div>
             <div id="view-visits" class="view-panel"></div>
         </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav" id="bottom-nav" hidden>
+            <button class="bottom-nav-item active" data-tab="home" type="button">
+                <span class="nav-glyph">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="accounts" type="button">
+                <span class="nav-glyph">🏢</span>
+                <span class="nav-label">Accounts</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="planner" type="button">
+                <span class="nav-glyph">📅</span>
+                <span class="nav-label">Planner</span>
+            </button>
+            <button class="bottom-nav-item" data-tab="visits" type="button">
+                <span class="nav-glyph">📋</span>
+                <span class="nav-label">Visits</span>
+            </button>
+        </nav>
+
     </body>
 </html>
