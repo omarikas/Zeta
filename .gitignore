@@ -12,6 +12,10 @@
 !offline/
 !offline/**
 
+# Unignore force-app directory (needed for LWC components during build)
+!force-app/
+!force-app/**
+
 # Unignore GitHub Actions workflows
 !.github/
 !.github/workflows/**
