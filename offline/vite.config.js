@@ -237,6 +237,9 @@ export default defineConfig(({ mode }) => {
         optimizeDeps: {
             exclude: ['c/fieldRepHomeMetrics', 'c/clmOfflineStore']
         },
+         proxy: {
+                '/services': salesforceProxy(instanceUrl)
+            },
         server: {
             port: 5173,
             fs: {
