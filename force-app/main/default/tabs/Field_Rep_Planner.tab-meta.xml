@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Weekly field-rep calendar, map, and route planner.</description>
-    <label>Field Rep Planner</label>
-    <lwcComponent>fieldRepPlanner</lwcComponent>
-    <motif>Custom54: Map</motif>
-</CustomTab>
