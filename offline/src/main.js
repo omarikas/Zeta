@@ -22,10 +22,13 @@ function readToken() {
 }
 
 function configureRuntime(token) {
-    globalThis.PLANNER_REST_BASE = window.location.origin;
+    const sfInstance = 'https://zetapharma.my.salesforce.com';
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // In local dev, use Vite proxy (window.location.origin → /services proxied to SF)
+    // In production (GitHub Pages), call Salesforce directly with the instance URL
+    globalThis.PLANNER_REST_BASE = isLocalDev ? window.location.origin : sfInstance;
     globalThis.PLANNER_ACCESS_TOKEN = token;
-    globalThis.PLANNER_SF_INSTANCE =
-        import.meta.env.VITE_SF_INSTANCE_URL || 'https://zetapharma.my.salesforce.com';
+    globalThis.PLANNER_SF_INSTANCE = sfInstance;
 }
 
 function mountHomeView() {
