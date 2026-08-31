@@ -102,8 +102,9 @@ function generateState() {
     return state;
 }
 
-// Cloudflare Worker URL for token proxy (avoids CORS)
-const TOKEN_PROXY_URL = 'https://sf-token.your-subdomain.workers.dev';
+// Vercel function URL for token proxy (avoids CORS)
+// After deploying to Vercel, replace with your actual URL
+const TOKEN_PROXY_URL = 'https://zeta-pwa.vercel.app/api/sf-token';
 
 async function exchangeCodeForToken(code) {
     const codeVerifier = window.localStorage.getItem('oauth_code_verifier');
