@@ -6,13 +6,24 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:ios": "cap open ios",
+    "cap:android": "cap open android",
+    "cap:build": "npm run build && cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@lwc/compiler": "^9.4.1",
     "@lwc/engine-dom": "^9.4.1",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "lwc": "^9.4.1",
     "vite": "^6.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
   }
 }
