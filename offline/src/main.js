@@ -17,7 +17,7 @@ let currentTab = 'home';
 
 // OAuth Configuration
 const OAUTH_CONFIG = {
-    clientId: '3MVG9U65ySgtae71Qj6sHa91riQi5zYnDUuWE7JjImuS_88hpRINjnlWStuC5L6xuY2ynVxdKcMxVcQQ5k7c0',
+    clientId: '3MVG9U65ySgtae71Qj6sHa91riS85fiD5Ndf7MVHpJQwOPlo1bAScoaXG28Yvfwx05xwl.R8NaGGLPFUDSj_y',
     loginUrl: 'https://zetapharma.my.salesforce.com',
     callbackUrl: 'https://omarikas.github.io/Zeta',
     scopes: 'Api RefreshToken Web'
@@ -110,7 +110,7 @@ async function exchangeCodeForToken(code) {
     const params = new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: '80B2C3107CC53215C621676D854B96C93E8F8B03D6C4DD5E23000E4F2AA37F51',
+        client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
         redirect_uri: OAUTH_CONFIG.callbackUrl,
         code: code,
         code_verifier: codeVerifier
@@ -139,7 +139,7 @@ async function refreshAccessToken() {
     const params = new URLSearchParams({
         grant_type: 'refresh_token',
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: '80B2C3107CC53215C621676D854B96C93E8F8B03D6C4DD5E23000E4F2AA37F51',
+        client_secret: '4514D82B1A25A3682B8E22DAC87885B29521CBFEDE2382682F5E356933C9B473',
         refresh_token: refreshToken
     });
 
