@@ -23,6 +23,10 @@
 # Unignore vercel.json for CORS configuration
 !vercel.json
 
+# Unignore api directory for Vercel serverless functions
+!api/
+!api/**
+
 # Salesforce cache
 .sf/
 .sfdx/
