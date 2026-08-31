@@ -20,7 +20,7 @@ const OAUTH_CONFIG = {
     clientId: '3MVG9U65ySgtae71Qj6sHa91riS85fiD5Ndf7MVHpJQwOPlo1bAScoaXG28Yvfwx05xwl.R8NaGGLPFUDSj_y',
     loginUrl: 'https://zetapharma.my.salesforce.com',
     callbackUrl: 'https://omarikas.github.io/Zeta',
-    scopes: 'api refresh_token web'
+    scopes: 'api refresh_token'
 };
 
 function readToken() {
