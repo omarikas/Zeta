@@ -38,6 +38,61 @@ global with sharing class PlannerMobileRestService {
     public Map<String, String> cursors;
   }
 
+  /**
+   * Extracts the Bearer token from the Authorization header of the request.
+   * Returns null if no valid token is found.
+   */
+  private static String extractBearerToken(RestRequest req) {
+    String authHeader = req.headers.get('Authorization');
+    if (String.isBlank(authHeader)) {
+      return null;
+    }
+    if (authHeader.startsWith('Bearer ')) {
+      return authHeader.substring(7).trim();
+    }
+    return null;
+  }
+
+  /**
+   * Makes an HTTP callout to Salesforce REST API using the provided access token.
+   * @param endpoint The full URL to call
+   * @param method The HTTP method (GET, POST, PUT, DELETE, PATCH)
+   * @param accessToken The Bearer token for authentication
+   * @param body The request body (for POST/PUT/PATCH)
+   * @return The HttpResponse from the callout
+   */
+  private static HttpResponse callSalesforceRest(
+    String endpoint,
+    String method,
+    String accessToken,
+    String body
+  ) {
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint(endpoint);
+    req.setMethod(method);
+    req.setHeader('Authorization', 'Bearer ' + accessToken);
+    req.setHeader('Content-Type', 'application/json');
+    req.setTimeout(120000);
+
+    if (String.isNotBlank(body) && (method == 'POST' || method == 'PUT' || method == 'PATCH')) {
+      req.setBody(body);
+    }
+
+    Http http = new Http();
+    return http.send(req);
+  }
+
+  /**
+   * Gets the Salesforce instance URL from the request or defaults to current org.
+   */
+  private static String getSalesforceInstanceUrl(RestRequest req) {
+    String instanceUrl = req.headers.get('X-SF-Instance-URL');
+    if (String.isNotBlank(instanceUrl)) {
+      return instanceUrl.replace('/', '');
+    }
+    return URL.getOrgDomainUrl().toExternalForm().replace('https://', '').replace('/', '');
+  }
+
   @HttpGet
   global static void doGet() {
     RestRequest req = RestContext.request;

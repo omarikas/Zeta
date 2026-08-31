@@ -11,7 +11,18 @@ import './slds-shim.css';
 import './shell.css';
 
 const TOKEN_KEY = 'zeta.pwa.sfAccessToken';
+const REFRESH_TOKEN_KEY = 'zeta.pwa.sfRefreshToken';
+const INSTANCE_URL_KEY = 'zeta.pwa.sfInstanceUrl';
 let currentTab = 'home';
+
+// OAuth Configuration
+// Update these values after deploying the Connected App to Salesforce
+const OAUTH_CONFIG = {
+    clientId: 'YOUR_CONNECTED_APP_CONSUMER_KEY',
+    loginUrl: 'https://zetapharma.my.salesforce.com',
+    callbackUrl: 'https://omarikas.github.io/Zeta',
+    scopes: 'api refresh_token web'
+};
 
 function readToken() {
     return (
@@ -21,14 +32,126 @@ function readToken() {
     ).trim();
 }
 
-function configureRuntime(token) {
-    const sfInstance = 'https://zetapharma.my.salesforce.com';
+function readRefreshToken() {
+    return window.localStorage.getItem(REFRESH_TOKEN_KEY) || '';
+}
+
+function readInstanceUrl() {
+    return window.localStorage.getItem(INSTANCE_URL_KEY) || 'https://zetapharma.my.salesforce.com';
+}
+
+function configureRuntime(token, refreshToken = null, instanceUrl = null) {
+    const sfInstance = instanceUrl || readInstanceUrl();
     const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     // In local dev, use Vite proxy (window.location.origin → /services proxied to SF)
     // In production (GitHub Pages), call Salesforce directly with the instance URL
     globalThis.PLANNER_REST_BASE = isLocalDev ? window.location.origin : sfInstance;
     globalThis.PLANNER_ACCESS_TOKEN = token;
     globalThis.PLANNER_SF_INSTANCE = sfInstance;
+
+    if (refreshToken) {
+        window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
+    if (instanceUrl) {
+        window.localStorage.setItem(INSTANCE_URL_KEY, instanceUrl);
+    }
+}
+
+// OAuth Functions
+function generateAuthUrl() {
+    const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: OAUTH_CONFIG.clientId,
+        redirect_uri: OAUTH_CONFIG.callbackUrl,
+        scope: OAUTH_CONFIG.scopes,
+        state: generateState()
+    });
+    return `${OAUTH_CONFIG.loginUrl}/services/oauth2/authorize?${params.toString()}`;
+}
+
+function generateState() {
+    const state = Math.random().toString(36).substring(2, 15);
+    window.localStorage.setItem('oauth_state', state);
+    return state;
+}
+
+async function exchangeCodeForToken(code) {
+    const tokenUrl = `${OAUTH_CONFIG.loginUrl}/services/oauth2/token`;
+    const params = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: OAUTH_CONFIG.clientId,
+        client_secret: 'YOUR_CONNECTED_APP_CONSUMER_SECRET',
+        redirect_uri: OAUTH_CONFIG.callbackUrl,
+        code: code
+    });
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to exchange code for token');
+    }
+
+    return response.json();
+}
+
+async function refreshAccessToken() {
+    const refreshToken = readRefreshToken();
+    if (!refreshToken) {
+        throw new Error('No refresh token available');
+    }
+
+    const tokenUrl = `${OAUTH_CONFIG.loginUrl}/services/oauth2/token`;
+    const params = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: OAUTH_CONFIG.clientId,
+        client_secret: 'YOUR_CONNECTED_APP_CONSUMER_SECRET',
+        refresh_token: refreshToken
+    });
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to refresh token');
+    }
+
+    return response.json();
+}
+
+function handleOAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const savedState = window.localStorage.getItem('oauth_state');
+
+    if (code && state === savedState) {
+        window.localStorage.removeItem('oauth_state');
+        return code;
+    }
+    return null;
+}
+
+function login() {
+    window.location.href = generateAuthUrl();
+}
+
+function logout() {
+    window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.localStorage.removeItem(INSTANCE_URL_KEY);
+    configureRuntime('');
+    unmountApp();
+    const nav = document.getElementById('app-nav');
+    const bar = document.getElementById('session-bar');
+    if (nav) nav.hidden = true;
+    if (bar) bar.hidden = false;
 }
 
 function mountHomeView() {
@@ -177,29 +300,19 @@ function setupNavigation() {
 
 function setupSessionBar(token) {
     const bar = document.getElementById('session-bar');
-    const form = document.getElementById('session-form');
-    const input = document.getElementById('token-input');
+    const loginBtn = document.getElementById('login-btn');
     const nav = document.getElementById('app-nav');
     const logoutBtn = document.getElementById('logout-btn');
 
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            window.localStorage.removeItem(TOKEN_KEY);
-            configureRuntime('');
-            unmountApp();
-            if (nav) {
-                nav.hidden = true;
-            }
-            if (bar) {
-                bar.hidden = false;
-            }
-            if (input) {
-                input.value = '';
-            }
-        });
+        logoutBtn.addEventListener('click', logout);
     }
 
-    if (!bar || !form || !input) {
+    if (loginBtn) {
+        loginBtn.addEventListener('click', login);
+    }
+
+    if (!bar) {
         return;
     }
 
@@ -211,34 +324,53 @@ function setupSessionBar(token) {
     } else if (nav) {
         nav.hidden = false;
     }
+}
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const next = (input.value || '').trim();
-        if (!next) {
-            return;
+async function initializeApp() {
+    // Handle OAuth callback
+    const code = handleOAuthCallback();
+    if (code) {
+        try {
+            const tokenData = await exchangeCodeForToken(code);
+            const { access_token, refresh_token, instance_url } = tokenData;
+            window.localStorage.setItem(TOKEN_KEY, access_token);
+            configureRuntime(access_token, refresh_token, instance_url);
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+            console.error('OAuth callback error:', error);
         }
-        window.localStorage.setItem(TOKEN_KEY, next);
-        configureRuntime(next);
-        bar.hidden = true;
-        if (nav) {
-            nav.hidden = false;
+    } else {
+        // Try to refresh token if we have one
+        const refreshToken = readRefreshToken();
+        if (refreshToken && !readToken()) {
+            try {
+                const tokenData = await refreshAccessToken();
+                const { access_token, instance_url } = tokenData;
+                window.localStorage.setItem(TOKEN_KEY, access_token);
+                configureRuntime(access_token, null, instance_url);
+            } catch (error) {
+                console.error('Token refresh error:', error);
+                logout();
+                return;
+            }
         }
+    }
+
+    const token = readToken();
+    configureRuntime(token);
+    setupNavigation();
+    setupSessionBar(token);
+    setupToastListener();
+    if (token) {
         mountApp();
+    }
+    registerServiceWorker();
+
+    registerOfflineListener((status) => {
+        console.log('[OfflineSyncListener] Sync phase changed:', status);
     });
+    startSyncService();
 }
 
-const token = readToken();
-configureRuntime(token);
-setupNavigation();
-setupSessionBar(token);
-setupToastListener();
-if (token) {
-    mountApp();
-}
-registerServiceWorker();
-
-registerOfflineListener((status) => {
-    console.log('[OfflineSyncListener] Sync phase changed:', status);
-});
-startSyncService();
+initializeApp();

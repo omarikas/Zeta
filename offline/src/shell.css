@@ -149,29 +149,27 @@ body {
     margin: 0 auto;
 }
 
-.session-form label {
-    display: grid;
-    gap: 0.25rem;
-    font-size: 0.75rem;
+.session-form h2 {
+    margin: 0;
+    font-size: 1.25rem;
     font-weight: 700;
 }
 
-.session-form input {
-    border: 0;
-    border-radius: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-}
-
-.session-form button {
+.login-btn {
     justify-self: start;
     border: 0;
     border-radius: 0.25rem;
-    padding: 0.45rem 0.9rem;
+    padding: 0.75rem 1.5rem;
     background: #1b96ff;
     color: #fff;
+    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.login-btn:hover {
+    background: #0176d3;
 }
 
 .session-hint {

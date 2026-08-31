@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>OAuth Callback</title>
+    </head>
+    <body>
+        <p>Signing in...</p>
+        <script>
+            // Parse the authorization code from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+
+            if (code && state) {
+                // Redirect to main page with the code
+                const redirectUrl = new URL('/', window.location.origin);
+                redirectUrl.searchParams.set('code', code);
+                redirectUrl.searchParams.set('state', state);
+                window.location.href = redirectUrl.toString();
+            } else {
+                document.body.innerHTML = '<p>Authorization failed. <a href="/">Go back</a></p>';
+            }
+        </script>
+    </body>
+</html>

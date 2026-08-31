@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>admin@zetapharma.com</contactEmail>
+    <label>Zeta PWA</label>
+    <configUrl>https://omarikas.github.io/Zeta</configUrl>
+    <oauthConfig>
+        <callbackUrl>https://omarikas.github.io/Zeta</callbackUrl>
+        <certificate></certificate>
+        <consumerSecret>auto-generated</consumerSecret>
+        <isAdminApproved>true</isAdminApproved>
+        <isConsumerSecretOptional>false</isConsumerSecretOptional>
+        <isIntrospectAllTokens>false</isIntrospectAllTokens>
+        <isSecretRequiredForRefreshToken>true</isSecretRequiredForRefreshToken>
+        <scopes>api</scopes>
+        <scopes>refresh_token</scopes>
+        <scopes>web</scopes>
+    </oauthConfig>
+    <oauthPolicy>
+        <ipRelaxation>ENFORCE</ipRelaxation>
+        <refreshTokenPolicy>EXPIRE_REFRESH_TOKEN</refreshTokenPolicy>
+    </oauthPolicy>
+    <sessionPolicies>
+        <sessionTimeout>TwelveHours</sessionTimeout>
+    </sessionPolicies>
+</ConnectedApp>

@@ -42,27 +42,20 @@
         </header>
 
         <div id="session-bar" class="session-bar" hidden>
-            <form id="session-form" class="session-form">
-                <label>
-                    Access token
-                    <input
-                        id="token-input"
-                        name="token"
-                        type="password"
-                        autocomplete="off"
-                        placeholder="Salesforce access token"
-                    />
-                </label>
-                <button type="submit">Connect</button>
+            <div class="session-form">
+                <h2>Sign in to Salesforce</h2>
+                <button id="login-btn" class="login-btn" type="button">
+                    Sign in with Salesforce
+                </button>
                 <p class="session-hint">
-                    Paste a Connected App access token. The PWA calls
+                    Click to sign in with your Salesforce credentials. The PWA calls
                     <code>/services/apexrest/planner/v1/home/dashboard</code>,
                     <code>/services/apexrest/planner/v1/home/today-plan</code>,
                     <code>/services/apexrest/planner/v1/home/next-best-customers</code>,
                     and
                     <code>/services/apexrest/planner/v1/week</code>.
                 </p>
-            </form>
+            </div>
         </div>
         <main id="app" class="app-shell">
             <div id="view-home" class="view-panel active"></div>
