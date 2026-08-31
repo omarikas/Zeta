@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#0176d3" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Pharma Field" />
+        <title>Pharma Field — Performance</title>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+      <script type="module" crossorigin src="/assets/index-CPOY-H4J.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-e-krB9L5.css">
+    </head>
+    <body>
+        <header id="app-nav" class="app-nav" hidden>
+            <div class="nav-left">
+                <div class="nav-brand">
+                    <span class="nav-title">Pharma Field</span>
+                    <span class="nav-badge">PWA</span>
+                </div>
+                <nav class="nav-tabs" role="tablist">
+                    <button id="tab-btn-home" class="nav-tab nav-tab-active" type="button" role="tab" data-tab="home" aria-selected="true">
+                        🏠 Home
+                    </button>
+                    <button id="tab-btn-accounts" class="nav-tab" type="button" role="tab" data-tab="accounts" aria-selected="false">
+                        🏢 Accounts
+                    </button>
+                        <button id="tab-btn-planner" class="nav-tab" type="button" role="tab" data-tab="planner" aria-selected="false">
+                            📅 Field Rep Planner
+                        </button>
+                        <button id="tab-btn-visits" class="nav-tab" type="button" role="tab" data-tab="visits" aria-selected="false">
+                            📋 Visits
+                        </button>
+                </nav>
+            </div>
+            <div class="nav-actions">
+                <button id="logout-btn" class="nav-btn-logout" type="button" title="Log out and clear access token">
+                    Log out
+                </button>
+            </div>
+        </header>
+
+        <div id="session-bar" class="session-bar" hidden>
+            <form id="session-form" class="session-form">
+                <label>
+                    Access token
+                    <input
+                        id="token-input"
+                        name="token"
+                        type="password"
+                        autocomplete="off"
+                        placeholder="Salesforce access token"
+                    />
+                </label>
+                <button type="submit">Connect</button>
+                <p class="session-hint">
+                    Paste a Connected App access token. The PWA calls
+                    <code>/services/apexrest/planner/v1/home/dashboard</code>,
+                    <code>/services/apexrest/planner/v1/home/today-plan</code>,
+                    <code>/services/apexrest/planner/v1/home/next-best-customers</code>,
+                    and
+                    <code>/services/apexrest/planner/v1/week</code>.
+                </p>
+            </form>
+        </div>
+        <main id="app" class="app-shell">
+            <div id="view-home" class="view-panel active"></div>
+            <div id="view-accounts" class="view-panel"></div>
+            <div id="view-planner" class="view-panel"></div>
+            <div id="view-visits" class="view-panel"></div>
+        </main>
+    </body>
+</html>
