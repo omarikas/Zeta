@@ -1,0 +1,246 @@
+<template>
+    <article class="sales-card">
+        <header class="sales-header">
+            <h2 class="sales-title">Pharmacy Sales Analytics</h2>
+            <p class="sales-subtitle">Withdrawals and revenue by product, brick, and data source</p>
+        </header>
+
+        <section class={filtersPanelClass}>
+            <button type="button" class="filters-toggle" onclick={handleFiltersToggle}>
+                <lightning-icon
+                    icon-name="utility:filterList"
+                    size="x-small"
+                    class="filters-toggle-icon"
+                ></lightning-icon>
+                {filtersToggleLabel}
+            </button>
+            <div class="filters-body">
+                <div class="filters-row filters-row--dates">
+                    <lightning-input
+                        type="month"
+                        label="From"
+                        value={startMonthValue}
+                        onchange={handleStartMonthChange}
+                    ></lightning-input>
+                    <lightning-input
+                        type="month"
+                        label="To"
+                        value={endMonthValue}
+                        onchange={handleEndMonthChange}
+                    ></lightning-input>
+                </div>
+                <div class="preset-group">
+                    <span class="preset-label">Quick range</span>
+                    <div class="preset-chips">
+                        <template for:each={presetButtons} for:item="preset">
+                            <button
+                                key={preset.id}
+                                type="button"
+                                class={preset.className}
+                                data-preset-id={preset.id}
+                                data-months={preset.months}
+                                onclick={handlePresetClick}
+                            >
+                                {preset.label}
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                <div class="filters-row filters-row--compact">
+                    <lightning-combobox
+                        label="Data Source"
+                        data-field="dataSource"
+                        value={dataSource}
+                        options={dataSourceOptions}
+                        onchange={handleFilterChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Therapy Area"
+                        data-field="therapyArea"
+                        value={therapyArea}
+                        options={therapyAreaOptions}
+                        onchange={handleFilterChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Product Family"
+                        data-field="productFamily"
+                        value={productFamily}
+                        options={productFamilyOptions}
+                        onchange={handleFilterChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Brick"
+                        data-field="brickId"
+                        value={brickId}
+                        options={brickOptions}
+                        onchange={handleFilterChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Pharmacy"
+                        data-field="pharmacyId"
+                        value={pharmacyId}
+                        options={pharmacyOptions}
+                        onchange={handleFilterChange}
+                    ></lightning-combobox>
+                </div>
+            </div>
+        </section>
+
+        <c-pharmacy-sales-agent-insights
+            lwc:ref="agentInsights"
+            filter-state={filterStateForInsights}
+        ></c-pharmacy-sales-agent-insights>
+
+        <template if:true={isLoading}>
+            <div class="sales-loading">
+                <lightning-spinner alternative-text="Loading sales analytics" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <section class="kpi-strip">
+                <template for:each={kpiCards} for:item="kpi">
+                    <div key={kpi.id} class="kpi-tile">
+                        <span class="kpi-tile-label">{kpi.label}</span>
+                        <span class="kpi-tile-value">{kpi.value}</span>
+                        <span class="kpi-tile-hint">{kpi.hint}</span>
+                    </div>
+                </template>
+            </section>
+
+            <section class="panel">
+                <h3 class="panel-title">Product Family Breakdown</h3>
+                <template if:true={hasFamilies}>
+                    <template for:each={familyCards} for:item="family">
+                        <article key={family.key} class="family-card">
+                            <button
+                                type="button"
+                                class="family-header"
+                                data-family={family.family}
+                                onclick={handleFamilyToggle}
+                            >
+                                <span class={family.chevronClass} aria-hidden="true">›</span>
+                                <span class="family-name">{family.family}</span>
+                                <span class="family-badge">{family.therapyBadge}</span>
+                                <span class="family-metrics">
+                                    <span>{family.quantityDisplay} units</span>
+                                    <span>{family.revenueDisplay}</span>
+                                    <span class={family.roiToneClass}>ROI {family.roiDisplay}</span>
+                                </span>
+                                <span class="family-roi-breakdown">{family.roiBreakdown}</span>
+                            </button>
+                            <template if:true={family.isExpanded}>
+                                <div class="family-products">
+                                    <template for:each={family.products} for:item="product">
+                                        <div key={product.key} class="product-row">
+                                            <template if:true={product.hasImage}>
+                                                <img class="product-image" src={product.imageUrl} alt={product.productName} />
+                                            </template>
+                                            <template if:false={product.hasImage}>
+                                                <div class="product-image product-image--placeholder" aria-hidden="true">
+                                                    <lightning-icon icon-name="utility:product" size="small"></lightning-icon>
+                                                </div>
+                                            </template>
+                                            <div class="product-meta">
+                                                <span class="product-name">{product.productName}</span>
+                                                <span class="product-stats">
+                                                    {product.quantityDisplay} units · {product.revenueDisplay} · {product.percentDisplay}
+                                                </span>
+                                                <span class="product-roi">
+                                                    <span class={product.roiToneClass}>ROI {product.roiDisplay}</span>
+                                                    <span class="product-roi-detail">{product.roiBreakdown}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </article>
+                    </template>
+                </template>
+                <template if:false={hasFamilies}>
+                    <p class="empty-copy">No product sales match the current filters.</p>
+                </template>
+            </section>
+
+            <section class="panel">
+                <h3 class="panel-title">Revenue by Brick and Month</h3>
+                <template if:true={hasMatrix}>
+                    <div class="matrix-wrap">
+                        <table class="matrix-table">
+                            <thead>
+                                <tr>
+                                    <th>Brick</th>
+                                    <template for:each={matrixMonthLabels} for:item="month">
+                                        <th key={month.key}>{month.label}</th>
+                                    </template>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={matrixRows} for:item="row">
+                                    <tr key={row.key}>
+                                        <td class="matrix-brick">{row.brickName}</td>
+                                        <template for:each={row.cells} for:item="cell">
+                                            <td key={cell.key}>
+                                                <button
+                                                    type="button"
+                                                    class={cell.cellClass}
+                                                    data-brick-id={row.brickId}
+                                                    data-month-key={cell.monthKey}
+                                                    onclick={handleMatrixCellClick}
+                                                    disabled={cell.isZero}
+                                                >
+                                                    {cell.revenueDisplay}
+                                                </button>
+                                            </td>
+                                        </template>
+                                        <td class="matrix-total">{row.rowTotalDisplay}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template if:false={hasMatrix}>
+                    <p class="empty-copy">No brick revenue data for the selected period.</p>
+                </template>
+            </section>
+
+            <section class="panel">
+                <h3 class="panel-title">Detail</h3>
+                <template if:true={isMobile}>
+                    <template if:true={hasDetailRows}>
+                        <div class="detail-cards">
+                            <template for:each={detailRows} for:item="row">
+                                <article key={row.key} class="detail-card">
+                                    <div class="detail-card-head">
+                                        <span class="detail-card-month">{row.monthLabel}</span>
+                                        <span class="detail-card-revenue">{row.revenueDisplay}</span>
+                                    </div>
+                                    <p class="detail-card-product">{row.productName}</p>
+                                    <p class="detail-card-meta">{row.pharmacyName} · {row.brickName}</p>
+                                    <p class="detail-card-meta">{row.productFamily} · {row.therapyArea}</p>
+                                    <p class="detail-card-stats">
+                                        {row.quantityDisplay} units · {row.unitPriceDisplay} · {row.dataSource}
+                                    </p>
+                                </article>
+                            </template>
+                        </div>
+                    </template>
+                    <template if:false={hasDetailRows}>
+                        <p class="empty-copy">No detail rows for the selected filters.</p>
+                    </template>
+                </template>
+                <template if:false={isMobile}>
+                    <lightning-datatable
+                        key-field="recordId"
+                        data={detailRows}
+                        columns={detailColumns}
+                        hide-checkbox-column
+                    ></lightning-datatable>
+                </template>
+            </section>
+        </template>
+    </article>
+</template>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Territory2_Id__c</fullName>
+    <description>Territory2 record Id (18 characters). Salesforce does not support custom lookups to Territory2.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Enter the 18-character Territory2 record Id from Territory Management.</inlineHelpText>
+    <label>Territory</label>
+    <length>18</length>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

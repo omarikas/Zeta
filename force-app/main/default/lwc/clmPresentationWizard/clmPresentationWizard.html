@@ -1,0 +1,295 @@
+<template>
+    <section class="wizard-modal" role="dialog" aria-modal="true">
+        <header class="wizard-header">
+            <h2>Presentation Setup — {stepLabel}</h2>
+            <lightning-button-icon icon-name="utility:close" alternative-text="Close" onclick={handleClose}></lightning-button-icon>
+        </header>
+
+        <div class="wizard-body">
+            <template if:true={isUploadStep}>
+                <p>Select a PDF or ZIP/HTML package to upload.</p>
+                <lightning-combobox
+                    label="Format"
+                    value={formatType}
+                    options={formatOptions}
+                    onchange={handleFormatChange}
+                    disabled={isUploading}
+                ></lightning-combobox>
+                <lightning-input
+                    type="file"
+                    label="Choose File"
+                    onchange={handleFileChange}
+                    disabled={isUploading}
+                ></lightning-input>
+                <template if:true={isUploading}>
+                    <div class="upload-progress">
+                        <p class="upload-status">{uploadStatus}</p>
+                        <lightning-progress-bar value={uploadProgress} size="large"></lightning-progress-bar>
+                    </div>
+                </template>
+            </template>
+
+            <template if:true={isSequenceStep}>
+                <section class="presentation-products">
+                    <h3 class="section-title">Presentation Products</h3>
+                    <p class="section-help">
+                        Link products to this presentation for reporting and session analytics.
+                    </p>
+                    <lightning-dual-listbox
+                        label="Products"
+                        source-label="Available"
+                        selected-label="Linked to presentation"
+                        options={productOptions}
+                        value={presentationProductIds}
+                        onchange={handlePresentationProductsChange}
+                    ></lightning-dual-listbox>
+                </section>
+
+                <div class="sequence-toolbar">
+                    <lightning-input
+                        type="number"
+                        label="Page / Sequence Count"
+                        value={pageCount}
+                        min="1"
+                        onchange={handlePageCountChange}
+                    ></lightning-input>
+                    <lightning-button
+                        label="Regenerate Sequences"
+                        onclick={handleGenerateSequences}
+                        disabled={isSaving}
+                    ></lightning-button>
+                    <lightning-button
+                        label="Save Sequences"
+                        variant="brand"
+                        onclick={handleSaveSequences}
+                        disabled={isSaving}
+                    ></lightning-button>
+                </div>
+
+                <section class="bulk-apply">
+                    <h3 class="section-title">Apply to Selected Slides</h3>
+                    <div class="bulk-apply-grid">
+                        <lightning-dual-listbox
+                            label="Products"
+                            source-label="Available"
+                            selected-label="Selected"
+                            options={productOptions}
+                            value={pickerProductIds}
+                            onchange={handlePickerProductsChange}
+                            size="4"
+                        ></lightning-dual-listbox>
+                        <lightning-dual-listbox
+                            label="Messages"
+                            source-label="Available"
+                            selected-label="Selected"
+                            options={messageOptions}
+                            value={pickerMessageNames}
+                            onchange={handlePickerMessagesChange}
+                            size="4"
+                        ></lightning-dual-listbox>
+                        <div class="bulk-apply-action">
+                            <lightning-button
+                                label="Apply to Selected"
+                                variant="brand"
+                                onclick={handleApplyProductsMessages}
+                            ></lightning-button>
+                        </div>
+                    </div>
+                </section>
+
+                <table class="sequence-table">
+                    <thead>
+                        <tr>
+                            <th class="col-check">
+                                <lightning-input
+                                    type="checkbox"
+                                    checked={allSequencesSelected}
+                                    onchange={handleSelectAllSequences}
+                                    variant="label-hidden"
+                                    label="Select all"
+                                ></lightning-input>
+                            </th>
+                            <th class="col-thumb">Preview</th>
+                            <th>Order</th>
+                            <th>Name</th>
+                            <th>Products</th>
+                            <th>Messages</th>
+                            <th>Mandatory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={sequenceRows} for:item="seq" for:index="index">
+                            <tr key={seq.rowKey}>
+                                <td class="col-check">
+                                    <lightning-input
+                                        type="checkbox"
+                                        checked={seq.isSelected}
+                                        data-key={seq.rowKey}
+                                        onchange={handleSequenceSelect}
+                                        variant="label-hidden"
+                                        label="Select slide"
+                                    ></lightning-input>
+                                </td>
+                                <td class="col-thumb">
+                                    <template if:true={seq.thumbnailUrl}>
+                                        <img src={seq.thumbnailUrl} alt={seq.sequenceName} class="slide-thumb" />
+                                    </template>
+                                    <template if:false={seq.thumbnailUrl}>
+                                        <span class="page-label">{seq.pageLabel}</span>
+                                    </template>
+                                </td>
+                                <td>{seq.sequenceOrder}</td>
+                                <td>
+                                    <lightning-input
+                                        value={seq.sequenceName}
+                                        data-index={index}
+                                        data-field="sequenceName"
+                                        onchange={handleSequenceFieldChange}
+                                        onblur={handleSequenceFieldChange}
+                                        variant="label-hidden"
+                                        label="Slide name"
+                                    ></lightning-input>
+                                </td>
+                                <td>
+                                    <lightning-input
+                                        value={seq.productNames}
+                                        data-index={index}
+                                        data-field="productNames"
+                                        onchange={handleSequenceFieldChange}
+                                        onblur={handleSequenceFieldChange}
+                                        variant="label-hidden"
+                                        label="Products"
+                                    ></lightning-input>
+                                </td>
+                                <td>
+                                    <lightning-input
+                                        value={seq.messageNames}
+                                        data-index={index}
+                                        data-field="messageNames"
+                                        onchange={handleSequenceFieldChange}
+                                        onblur={handleSequenceFieldChange}
+                                        variant="label-hidden"
+                                        label="Messages"
+                                    ></lightning-input>
+                                </td>
+                                <td>
+                                    <lightning-input
+                                        type="checkbox"
+                                        checked={seq.isMandatory}
+                                        data-index={index}
+                                        data-field="isMandatory"
+                                        onchange={handleSequenceFieldChange}
+                                        variant="label-hidden"
+                                        label="Mandatory"
+                                    ></lightning-input>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+
+            <template if:true={isSetupStep}>
+                <section class="setup-section">
+                    <h3 class="section-title">Presentation Details</h3>
+                    <div class="setup-row">
+                        <lightning-input
+                            label="Presentation Name"
+                            value={name}
+                            data-field="name"
+                            onchange={handleSetupChange}
+                            required
+                        ></lightning-input>
+                        <lightning-combobox
+                            label="Status"
+                            value={status}
+                            options={statusOptions}
+                            data-field="status"
+                            onchange={handleSetupChange}
+                        ></lightning-combobox>
+                    </div>
+                    <div class="setup-row">
+                        <lightning-input
+                            type="date"
+                            label="Start Date"
+                            value={startDate}
+                            data-field="startDate"
+                            onchange={handleSetupChange}
+                        ></lightning-input>
+                        <lightning-input
+                            type="date"
+                            label="End Date"
+                            value={endDate}
+                            data-field="endDate"
+                            onchange={handleSetupChange}
+                        ></lightning-input>
+                    </div>
+
+                    <div class="setup-products-block">
+                        <h3 class="section-title">Linked Products</h3>
+                        <p class="section-help">Products linked here are used in CLM session reporting.</p>
+                        <lightning-dual-listbox
+                            label="Presentation Products"
+                            source-label="Available"
+                            selected-label="Linked"
+                            options={productOptions}
+                            value={presentationProductIds}
+                            onchange={handlePresentationProductsChange}
+                        ></lightning-dual-listbox>
+                    </div>
+
+                    <div class="setup-row">
+                        <lightning-input
+                            label="Tags"
+                            value={tags}
+                            data-field="tags"
+                            onchange={handleSetupChange}
+                        ></lightning-input>
+                        <lightning-input
+                            label="Public Content URL"
+                            value={publicContentUrl}
+                            data-field="publicContentUrl"
+                            onchange={handleSetupChange}
+                        ></lightning-input>
+                    </div>
+                    <lightning-input
+                        type="checkbox"
+                        label="Allow Email"
+                        checked={allowEmail}
+                        data-field="allowEmail"
+                        onchange={handleSetupChange}
+                    ></lightning-input>
+                </section>
+
+                <section class="setup-territory">
+                    <c-clm-territory-targeting
+                        territory-ids-json={territoryIdsJson}
+                        allow-unaligned={allowUnaligned}
+                        product-ids-json={productIdsJsonForTerritory}
+                        onchange={handleTerritoryChange}
+                    ></c-clm-territory-targeting>
+                </section>
+            </template>
+        </div>
+
+        <footer class="wizard-footer">
+            <lightning-button label="Back" onclick={handleBack} disabled={isBackDisabled}></lightning-button>
+            <template if:false={isSetupStep}>
+                <lightning-button
+                    label="Next"
+                    variant="brand"
+                    onclick={handleNext}
+                    disabled={isNextDisabled}
+                ></lightning-button>
+            </template>
+            <template if:true={isSetupStep}>
+                <lightning-button
+                    label="Finish"
+                    variant="brand"
+                    onclick={handleFinish}
+                    disabled={isSaving}
+                ></lightning-button>
+            </template>
+        </footer>
+    </section>
+</template>

@@ -1,0 +1,73 @@
+<template>
+    <div class="my-learning">
+        <template if:true={loading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="empty-state error">{errorMessage}</div>
+        </template>
+
+        <template if:true={showCatalog}>
+            <header class="catalog-header">
+                <h1>My Learning</h1>
+                <p>Continue your assigned courses and track your progress.</p>
+            </header>
+
+            <template if:true={hasCourses}>
+                <div class="course-grid">
+                    <template for:each={courses} for:item="course">
+                        <article key={course.instanceId} class="course-card">
+                            <div class="course-card-body">
+                                <h2>{course.title}</h2>
+                                <p class="status">{course.status}</p>
+                                <div class="progress-track" aria-hidden="true">
+                                    <div class="progress-fill" style={course.progressStyle}></div>
+                                </div>
+                                <p class="progress-label">{course.progressLabel} complete</p>
+                            </div>
+                            <div class="course-card-actions">
+                                <lightning-button
+                                    variant="brand"
+                                    label="Continue"
+                                    data-id={course.instanceId}
+                                    onclick={handleContinue}
+                                ></lightning-button>
+                                <template if:true={course.canShowCertificate}>
+                                    <lightning-button
+                                        class="slds-m-left_x-small"
+                                        label="Certificate"
+                                        data-id={course.instanceId}
+                                        onclick={handleShowCertificateFromCard}
+                                    ></lightning-button>
+                                </template>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasCourses}>
+                <div class="empty-state">
+                    No learning modules are assigned to you yet. Ask your learning manager to assign a course.
+                </div>
+            </template>
+        </template>
+
+        <template if:true={showPlayer}>
+            <c-learning-course-player
+                course-instance-id={courseInstanceId}
+                initial-player={player}
+                onback={handleBackToCatalog}
+                onrefresh={handlePlayerRefresh}
+                onshowcertificate={handleShowCertificate}
+            ></c-learning-course-player>
+        </template>
+
+        <template if:true={showCertificate}>
+            <c-learning-certificate
+                course-instance-id={courseInstanceId}
+                onback={handleBackToCatalog}
+            ></c-learning-certificate>
+        </template>
+    </div>
+</template>

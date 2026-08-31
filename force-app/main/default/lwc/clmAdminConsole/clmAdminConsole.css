@@ -1,0 +1,74 @@
+.clm-admin-console {
+    padding: 1rem;
+}
+
+.clm-admin-console-embedded {
+    padding: 0;
+}
+
+.clm-subnav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 0.5rem;
+}
+
+.clm-subnav-btn {
+    border: 1px solid #e5e5e5;
+    background: #fafafa;
+    border-radius: 999px;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.clm-subnav-btn-active {
+    background: #0176d3;
+    border-color: #0176d3;
+    color: #fff;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.admin-header p {
+    margin: 0.125rem 0 0;
+    color: #706e6b;
+    font-size: 0.8125rem;
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 0.75rem;
+}
+
+.module-card {
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: #fff;
+    cursor: pointer;
+}
+
+.module-card h2 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 0.9375rem;
+}
+
+.module-card p {
+    margin: 0;
+    color: #706e6b;
+    font-size: 0.8125rem;
+}

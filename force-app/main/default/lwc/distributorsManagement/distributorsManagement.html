@@ -1,0 +1,361 @@
+<template>
+    <section class="dist-admin">
+        <header class="dist-header">
+            <div>
+                <h1 class="dist-title">Distributors Management</h1>
+                <p class="dist-subtitle">
+                    Import native distributor Excel files, review product and sellout mappings, and load sell-out
+                    withdrawals.
+                </p>
+            </div>
+            <div class="dist-header-actions">
+                <lightning-combobox
+                    label="Distributor filter"
+                    value={distributorCode}
+                    options={distributorFilterOptions}
+                    placeholder="All distributors"
+                    onchange={handleDistributorChange}
+                    class="dist-combo"
+                ></lightning-combobox>
+            </div>
+        </header>
+
+        <nav class="tab-bar" role="tablist">
+            <template for:each={tabs} for:item="tab">
+                <button
+                    key={tab.id}
+                    class={tab.className}
+                    data-tab-id={tab.id}
+                    onclick={handleTabClick}
+                    type="button"
+                    role="tab"
+                >
+                    {tab.label}
+                </button>
+            </template>
+        </nav>
+
+        <template if:true={isImportTab}>
+            <div class="panel">
+                <div class="panel-row">
+                    <lightning-input
+                        type="password"
+                        label="Google Geocoding API key (optional)"
+                        value={googleApiKeyInput}
+                        onchange={handleGoogleApiKeyChange}
+                    ></lightning-input>
+                    <lightning-button
+                        label="Save geocode key"
+                        onclick={handleSaveGeocodeKey}
+                        disabled={isSavingGeocode}
+                    ></lightning-button>
+                </div>
+                <p class="muted hint">{geocodeReadyMessage}</p>
+                <div class="panel-row">
+                    <lightning-input
+                        type="file"
+                        label="Distributor Excel (.xlsx)"
+                        accept=".xlsx,.xlsm,.xls"
+                        onchange={handleFileChange}
+                    ></lightning-input>
+                    <lightning-input
+                        type="text"
+                        label="Report month (YYYY-MM)"
+                        value={reportMonth}
+                        onchange={handleReportMonthChange}
+                    ></lightning-input>
+                    <lightning-combobox
+                        label="Report type"
+                        value={reportCadence}
+                        options={reportCadenceOptions}
+                        placeholder="Auto-detect"
+                        disabled
+                        class="dist-combo"
+                    ></lightning-combobox>
+                    <lightning-input
+                        type="number"
+                        label="Max rows (pilot)"
+                        value={importMaxRows}
+                        min="0"
+                        onchange={handleImportMaxRowsChange}
+                    ></lightning-input>
+                    <lightning-input
+                        type="checkbox"
+                        label="Prefer rows with address"
+                        checked={preferAddressedRows}
+                        onchange={handlePreferAddressedToggle}
+                    ></lightning-input>
+                </div>
+                <p class="muted hint">
+                    Start with Max rows around 150-200 and Prefer rows with address checked so geocoding + map matching
+                    can be verified. Distributor is auto-detected from the workbook. Set Max rows to 0 to import all
+                    parsed rows (large files need Google key + may take longer).
+                </p>
+                <template if:true={isParsing}>
+                    <p class="muted">Parsing workbook...</p>
+                </template>
+                <template if:true={hasParsedRows}>
+                    <p class="summary">{parseSummary}</p>
+                    <template for:each={parseWarnings} for:item="w">
+                        <p key={w} class="warn">{w}</p>
+                    </template>
+                    <lightning-button
+                        variant="brand"
+                        label="Import &amp; queue processing"
+                        onclick={handleImport}
+                        disabled={isImporting}
+                        class="slds-m-top_small"
+                    ></lightning-button>
+                    <template if:true={importMessage}>
+                        <p class="muted slds-m-top_x-small">{importMessage}</p>
+                    </template>
+                </template>
+            </div>
+        </template>
+
+        <template if:true={isProductsTab}>
+            <div class="panel product-mapping-panel">
+                <div class="panel-row">
+                    <lightning-combobox
+                        label="Browse by"
+                        value={productGroupMode}
+                        options={groupModeOptions}
+                        onchange={handleProductGroupModeChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Product line"
+                        value={productLineFilter}
+                        options={productLineFilterOptions}
+                        onchange={handleProductLineFilterChange}
+                    ></lightning-combobox>
+                    <lightning-combobox
+                        label="Status"
+                        value={productStatusFilter}
+                        options={statusFilterOptions}
+                        onchange={handleProductFilterChange}
+                    ></lightning-combobox>
+                    <lightning-input
+                        type="search"
+                        label="Search"
+                        value={productSearch}
+                        placeholder="Item, code, product..."
+                        onchange={handleProductSearchChange}
+                    ></lightning-input>
+                    <lightning-input
+                        type="checkbox"
+                        label="Unmapped / suggested only"
+                        checked={productUnmappedOnly}
+                        onchange={handleProductUnmappedToggle}
+                    ></lightning-input>
+                    <lightning-button
+                        label="Bulk confirm 90%+"
+                        onclick={handleBulkConfirmProducts}
+                    ></lightning-button>
+                </div>
+                <p class="muted hint">
+                    Browse by distributor or product line in the left panel. Double-click Item name, Zeta code,
+                    Confidence %, or Status to edit inline, then Save. Click the product name to open the Salesforce
+                    Product record.
+                </p>
+                <div class={productLayoutClass}>
+                    <template if:true={showProductNav}>
+                        <aside class="product-nav" aria-label="Mapping hierarchy">
+                            <button
+                                type="button"
+                                class={allNavClass}
+                                data-key=""
+                                onclick={handleProductNavClick}
+                            >
+                                <span class="nav-main">
+                                    <img class="nav-logo" src={allDistributorsLogoUrl} alt="" />
+                                    <span>All</span>
+                                </span>
+                                <span class="nav-count">{productTotalCount}</span>
+                            </button>
+                            <template for:each={productNavItems} for:item="item">
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    class={item.className}
+                                    data-key={item.key}
+                                    onclick={handleProductNavClick}
+                                >
+                                    <span class="nav-main">
+                                        <template if:true={item.hasLogo}>
+                                            <img class="nav-logo" src={item.logoUrl} alt="" />
+                                        </template>
+                                        <template if:false={item.hasLogo}>
+                                            <span class="nav-logo nav-logo--placeholder" aria-hidden="true"></span>
+                                        </template>
+                                        <span class="nav-label">{item.label}</span>
+                                    </span>
+                                    <span class="nav-count">{item.count}</span>
+                                </button>
+                            </template>
+                        </aside>
+                    </template>
+                    <div class="product-table-wrap">
+                        <template if:true={hasProductDrafts}>
+                            <div class="table-actions">
+                                <lightning-button
+                                    variant="brand"
+                                    label="Save edits"
+                                    onclick={handleSaveProductDrafts}
+                                    disabled={isSavingProducts}
+                                ></lightning-button>
+                                <lightning-button label="Cancel" onclick={handleCancelProductDrafts}></lightning-button>
+                            </div>
+                        </template>
+                        <div class="pager-row">
+                            <p class="muted filter-summary">{productFilterSummary}</p>
+                            <div class="pager-controls">
+                                <lightning-combobox
+                                    label="Rows"
+                                    value={productPageSizeValue}
+                                    options={productPageSizeOptions}
+                                    onchange={handleProductPageSizeChange}
+                                    class="pager-size"
+                                ></lightning-combobox>
+                                <span class="muted pager-label">{productPageLabel}</span>
+                                <lightning-button
+                                    label="Previous"
+                                    onclick={handleProductPrevPage}
+                                    disabled={isProductPrevDisabled}
+                                ></lightning-button>
+                                <lightning-button
+                                    label="Next"
+                                    onclick={handleProductNextPage}
+                                    disabled={isProductNextDisabled}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                        <lightning-datatable
+                            key-field="recordId"
+                            data={pagedProductRows}
+                            columns={productColumns}
+                            draft-values={productDrafts}
+                            onsave={handleSaveProductDrafts}
+                            oncancel={handleCancelProductDrafts}
+                            oncellchange={handleProductCellChange}
+                            hide-checkbox-column
+                            show-row-number-column
+                        ></lightning-datatable>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template if:true={isSelloutsTab}>
+            <div class="panel sellout-layout">
+                <div class="sellout-list">
+                    <div class="panel-row">
+                        <lightning-combobox
+                            label="Status"
+                            value={selloutStatusFilter}
+                            options={statusFilterOptions}
+                            onchange={handleSelloutFilterChange}
+                        ></lightning-combobox>
+                        <lightning-input
+                            type="checkbox"
+                            label="Needs review only"
+                            checked={selloutNeedsReview}
+                            onchange={handleSelloutReviewToggle}
+                        ></lightning-input>
+                    </div>
+                    <lightning-datatable
+                        key-field="recordId"
+                        data={selloutRows}
+                        columns={selloutColumns}
+                        max-row-selection="1"
+                        onrowselection={handleSelloutRowSelection}
+                    ></lightning-datatable>
+                    <div class="override-box">
+                        <h3>Selected sellout</h3>
+                        <template if:true={selectedSellout}>
+                            <div class="sellout-detail">
+                                <div class="btn-row">
+                                    <lightning-button
+                                        label="Open alias record"
+                                        variant="neutral"
+                                        onclick={handleOpenSelectedAlias}
+                                    ></lightning-button>
+                                    <template if:true={selectedSelloutHasPharmacy}>
+                                        <lightning-button
+                                            label="Open pharmacy Account"
+                                            variant="brand-outline"
+                                            onclick={handleOpenSelectedPharmacy}
+                                        ></lightning-button>
+                                    </template>
+                                </div>
+                                <template if:true={selectedSelloutHasPharmacy}>
+                                    <p class="muted">
+                                        Mapped Salesforce Account:
+                                        <a href={selectedSelloutPharmacyUrl} target="_blank" rel="noopener noreferrer"
+                                            >{selectedSelloutPharmacyLabel}</a
+                                        >
+                                    </p>
+                                </template>
+                                <template if:false={selectedSelloutHasPharmacy}>
+                                    <p class="muted">
+                                        No pharmacy Account linked yet. Geocoded rows can auto-create one, or link an
+                                        existing pharmacy below.
+                                    </p>
+                                </template>
+                                <template if:true={selectedSelloutNeedsGeoHelp}>
+                                    <div class="geo-help">
+                                        <p><strong>Geo:</strong> {selectedSelloutGeoStatus}</p>
+                                        <template if:true={selectedSelloutGeoReason}>
+                                            <p><strong>Reason:</strong> {selectedSelloutGeoReason}</p>
+                                        </template>
+                                        <template if:true={selectedSelloutGeoRecommendation}>
+                                            <p><strong>Recommendation:</strong> {selectedSelloutGeoRecommendation}</p>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:true={linkedDistributorsLabel}>
+                                    <p class="muted">{linkedDistributorsLabel}</p>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:false={selectedSellout}>
+                            <p class="muted">Select a row to review mapping, open records, or fix geocode failures.</p>
+                        </template>
+                        <h3>Link / create pharmacy</h3>
+                        <div class="panel-row">
+                            <lightning-input
+                                type="search"
+                                label="Search pharmacies"
+                                value={pharmacySearch}
+                                onchange={handlePharmacySearch}
+                            ></lightning-input>
+                            <lightning-combobox
+                                label="Target pharmacy"
+                                value={selectedPharmacyId}
+                                options={pharmacyComboboxOptions}
+                                onchange={handlePharmacyOptionChange}
+                            ></lightning-combobox>
+                        </div>
+                        <div class="btn-row">
+                            <lightning-button variant="brand" label="Link" onclick={handleLinkPharmacy}></lightning-button>
+                            <lightning-button label="Create pharmacy" onclick={handleCreatePharmacy}></lightning-button>
+                            <lightning-button label="Merge onto target" onclick={handleMergeSellout}></lightning-button>
+                            <lightning-button label="Reject" onclick={handleRejectSellout}></lightning-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sellout-map" lwc:dom="manual"></div>
+            </div>
+        </template>
+
+        <template if:true={isBatchesTab}>
+            <div class="panel">
+                <lightning-datatable
+                    key-field="batchId"
+                    data={batchRows}
+                    columns={batchColumns}
+                    hide-checkbox-column
+                ></lightning-datatable>
+            </div>
+        </template>
+    </section>
+</template>

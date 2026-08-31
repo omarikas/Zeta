@@ -1,0 +1,210 @@
+.bricks-console {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.console-subtitle {
+    color: #706e6b;
+    font-size: 0.8125rem;
+    margin: 0;
+}
+
+.console-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.console-panels {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.9fr) minmax(16rem, 1.1fr) minmax(18rem, 1.2fr);
+    gap: 1rem;
+    min-height: 26rem;
+}
+
+.panel {
+    border: 1px solid #ecebea;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 24rem;
+}
+
+.panel-heading h3 {
+    margin: 0 0 0.35rem;
+    font-size: 0.875rem;
+    color: #0176d3;
+    font-weight: 600;
+}
+
+.panel-caption {
+    margin: 0 0 0.5rem;
+    color: #706e6b;
+    font-size: 0.75rem;
+}
+
+.tree-list {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    overflow: auto;
+    flex: 1;
+}
+
+.tree-row {
+    border-radius: 0.25rem;
+}
+
+.tree-row--selected {
+    background: #eef4ff;
+}
+
+.tree-row-content {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.25rem;
+}
+
+.toggle-btn,
+.territory-select-btn,
+.brick-select-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.toggle-spacer {
+    display: inline-block;
+    width: 1.25rem;
+}
+
+.territory-select-btn {
+    font-size: 0.8125rem;
+    padding: 0.125rem 0.25rem;
+    flex: 1;
+}
+
+.brick-list {
+    overflow: auto;
+    flex: 1;
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.brick-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #ecebea;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.brick-row--selected {
+    border-color: #0176d3;
+    box-shadow: 0 0 0 1px #0176d3 inset;
+}
+
+.brick-select-btn {
+    flex: 1;
+    padding: 0.5rem 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.brick-name {
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.brick-meta,
+.brick-count {
+    font-size: 0.75rem;
+    color: #706e6b;
+}
+
+.brick-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.25rem;
+    border-left: 1px solid #ecebea;
+    background: #fafaf9;
+}
+
+.pharmacy-add-row {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #706e6b;
+    font-size: 0.8125rem;
+}
+
+.brick-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brick-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.brick-modal-panel {
+    position: relative;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    width: min(36rem, 92vw);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.brick-modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.brick-form-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.brick-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 960px) {
+    .console-panels {
+        grid-template-columns: 1fr;
+    }
+}

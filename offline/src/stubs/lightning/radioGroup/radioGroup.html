@@ -1,0 +1,23 @@
+<template>
+    <div class="slds-form-element">
+        <template if:true={label}>
+            <legend class="slds-form-element__legend slds-form-element__label">{label}</legend>
+        </template>
+        <div class="slds-form-element__control">
+            <template for:each={computedOptions} for:item="opt">
+                <label key={opt.value} class="slds-radio">
+                    <input
+                        type="radio"
+                        name={name}
+                        value={opt.value}
+                        checked={opt.checked}
+                        disabled={disabled}
+                        onchange={handleChange}
+                    />
+                    <span class="slds-radio_faux"></span>
+                    <span class="slds-form-element__label">{opt.label}</span>
+                </label>
+            </template>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,85 @@
+.template-manager {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.manager-filters {
+    display: flex;
+    gap: 1rem;
+    flex: 1;
+}
+
+.manager-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.manager-table th,
+.manager-table td {
+    border-bottom: 1px solid #ecebea;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #706e6b;
+}
+
+.empty-state p {
+    margin-bottom: 1rem;
+}
+
+.new-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.new-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.new-modal-panel {
+    position: relative;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    width: min(28rem, 92vw);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.new-modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.new-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}

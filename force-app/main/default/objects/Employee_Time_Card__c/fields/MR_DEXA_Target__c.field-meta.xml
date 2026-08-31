@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>MR_DEXA_Target__c</fullName>
+    <defaultValue>0</defaultValue>
+    <description>Misr Radiology — DEXA Target</description>
+    <externalId>false</externalId>
+    <label>DEXA Target</label>
+    <precision>16</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

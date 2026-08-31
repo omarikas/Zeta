@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Territory_Title_Employee__c</fullName>
+    <description>Report grouping: Territory | Title | Employee name</description>
+    <externalId>false</externalId>
+    <formula>BLANKVALUE(Territory__c, &quot;&quot;) &amp; &quot; | &quot; &amp; BLANKVALUE(Employee__r.Title, &quot;&quot;) &amp; &quot; | &quot; &amp; BLANKVALUE(Employee__r.FirstName &amp; &quot; &quot; &amp; Employee__r.LastName, &quot;&quot;)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Territory, Title, Employee</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

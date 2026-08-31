@@ -1,0 +1,97 @@
+<template>
+    <section class="template-manager">
+        <header class="manager-header">
+            <div class="manager-filters">
+                <lightning-input
+                    type="search"
+                    label="Search"
+                    value={searchTerm}
+                    onchange={handleSearch}
+                ></lightning-input>
+                <lightning-combobox
+                    label="Status"
+                    value={activeFilter}
+                    options={activeOptions}
+                    onchange={handleActiveFilter}
+                ></lightning-combobox>
+            </div>
+            <lightning-button label="New Template" variant="brand" onclick={handleNew}></lightning-button>
+        </header>
+
+        <template if:true={hasRows}>
+            <table class="manager-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={rows} for:item="row">
+                        <tr key={row.id}>
+                            <td>{row.title}</td>
+                            <td>{row.templateType}</td>
+                            <td>{row.activeLabel}</td>
+                            <td>{row.startDateLabel}</td>
+                            <td>{row.endDateLabel}</td>
+                            <td class="actions">
+                                <lightning-button
+                                    label="Open"
+                                    data-id={row.id}
+                                    onclick={handleOpen}
+                                ></lightning-button>
+                                <lightning-button
+                                    label="Clone"
+                                    data-id={row.id}
+                                    disabled={isSaving}
+                                    onclick={handleClone}
+                                ></lightning-button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+
+        <template if:false={hasRows}>
+            <div class="empty-state">
+                <p>No coaching templates found.</p>
+                <lightning-button label="Create first template" variant="brand" onclick={handleNew}></lightning-button>
+            </div>
+        </template>
+
+        <template if:true={showNewModal}>
+            <section class="new-modal" role="dialog" aria-modal="true" aria-label="New coaching template">
+                <div class="new-modal-backdrop" onclick={handleCloseNew}></div>
+                <div class="new-modal-panel">
+                    <h3 class="new-modal-title">New Coaching Template</h3>
+                    <lightning-input
+                        label="Template Title"
+                        value={newTitle}
+                        onchange={handleNewTitle}
+                        required
+                    ></lightning-input>
+                    <lightning-combobox
+                        label="Template Type"
+                        value={newType}
+                        options={typeOptions}
+                        onchange={handleNewType}
+                    ></lightning-combobox>
+                    <div class="new-modal-actions">
+                        <lightning-button label="Cancel" onclick={handleCloseNew}></lightning-button>
+                        <lightning-button
+                            label="Create"
+                            variant="brand"
+                            disabled={isNewDisabled}
+                            onclick={handleCreate}
+                        ></lightning-button>
+                    </div>
+                </div>
+            </section>
+        </template>
+    </section>
+</template>

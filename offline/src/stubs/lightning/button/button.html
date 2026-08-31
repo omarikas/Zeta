@@ -1,0 +1,14 @@
+<template>
+    <button
+        type="button"
+        class={computedClass}
+        disabled={disabled}
+        title={title}
+        onclick={handleClick}
+    >
+        <template if:true={label}>
+            {label}
+        </template>
+        <slot></slot>
+    </button>
+</template>

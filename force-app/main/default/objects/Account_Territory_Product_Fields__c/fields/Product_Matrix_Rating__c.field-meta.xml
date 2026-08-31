@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Product_Matrix_Rating__c</fullName>
+    <description>Combined Adoption and Loyalty rating (e.g. HH, ML). Set automatically on save.</description>
+    <externalId>false</externalId>
+    <label>Product Matrix Rating</label>
+    <length>2</length>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

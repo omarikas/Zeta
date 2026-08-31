@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Template_Type__c</fullName>
+    <deprecated>false</deprecated>
+    <label>Template Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Field Coaching</fullName>
+                <default>true</default>
+                <label>Field Coaching</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

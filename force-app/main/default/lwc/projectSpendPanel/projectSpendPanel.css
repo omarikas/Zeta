@@ -1,0 +1,227 @@
+:host {
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.proj-panel {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.proj-panel-header {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #eef2f7;
+    background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+}
+
+.proj-panel-header-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.proj-spend-icon {
+    background: #ecfdf5;
+}
+
+.proj-spend-icon lightning-icon {
+    --slds-c-icon-color-foreground-default: #059669;
+}
+
+.proj-panel-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.proj-panel-subtitle {
+    margin: 0.125rem 0 0;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.proj-panel-loading {
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.proj-panel-alert {
+    margin: 0.75rem 1rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #b42318;
+    font-size: 0.8125rem;
+}
+
+.proj-spend-body {
+    padding: 1rem;
+}
+
+.proj-spend-gauge-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.proj-spend-gauge {
+    --proj-spend-angle: 0deg;
+    --proj-spend-color: #14b8a6;
+    width: 8.25rem;
+    height: 8.25rem;
+    border-radius: 999px;
+    background: conic-gradient(var(--proj-spend-color) 0deg var(--proj-spend-angle), #e5e7eb var(--proj-spend-angle) 360deg);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.proj-spend-gauge-inner {
+    width: 5.75rem;
+    height: 5.75rem;
+    border-radius: 999px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.proj-spend-gauge-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.proj-spend-gauge-label {
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.proj-spend-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.proj-spend-metric-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.proj-spend-metric-value {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.proj-spend-placeholder {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.8125rem;
+}
+
+.proj-spend-bar-block {
+    margin-bottom: 1rem;
+}
+
+.proj-spend-bar-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.proj-spend-bar-track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.proj-spend-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--proj-spend-color, #14b8a6), #0d9488);
+}
+
+.proj-spend-body {
+    --proj-spend-color: #14b8a6;
+}
+
+.proj-spend-activity-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.proj-spend-activity-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.proj-spend-activity-value {
+    display: block;
+    margin: 0.125rem 0 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.proj-spend-activity-track {
+    height: 0.375rem;
+    border-radius: 999px;
+    background: #eef2f7;
+    overflow: hidden;
+}
+
+.proj-spend-activity-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.proj-spend-activity-fill--blue {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.proj-spend-activity-fill--purple {
+    background: linear-gradient(90deg, #a855f7, #7c3aed);
+}
+
+.proj-spend-activity-fill--teal {
+    background: linear-gradient(90deg, #2dd4bf, #14b8a6);
+}
+
+@media (min-width: 640px) {
+    .proj-spend-activity-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

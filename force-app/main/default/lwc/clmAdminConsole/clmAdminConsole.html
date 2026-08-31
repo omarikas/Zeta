@@ -1,0 +1,15 @@
+<template>
+    <section class={containerClass}>
+        <template if:false={embedded}>
+            <header class="admin-header">
+                <lightning-icon icon-name="utility:screen" size="small"></lightning-icon>
+                <div>
+                    <h1>CLM Admin Console</h1>
+                    <p>Upload presentations, configure slides, and manage territory availability.</p>
+                </div>
+            </header>
+        </template>
+
+        <c-clm-presentation-manager></c-clm-presentation-manager>
+    </section>
+</template>

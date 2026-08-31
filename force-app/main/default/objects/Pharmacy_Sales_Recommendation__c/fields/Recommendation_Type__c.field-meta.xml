@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Recommendation_Type__c</fullName>
+    <label>Recommendation Type</label>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>EnsurePlan</fullName>
+                <default>false</default>
+                <label>Ensure Plan</label>
+            </value>
+            <value>
+                <fullName>UpdatePlanTarget</fullName>
+                <default>false</default>
+                <label>Update Plan Target</label>
+            </value>
+            <value>
+                <fullName>CreateVisit</fullName>
+                <default>false</default>
+                <label>Create Visit</label>
+            </value>
+            <value>
+                <fullName>UpdateAccountRating</fullName>
+                <default>false</default>
+                <label>Update Account Rating</label>
+            </value>
+            <value>
+                <fullName>UpdateVision</fullName>
+                <default>false</default>
+                <label>Update Vision</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,76 @@
+<template>
+    <section class="panel-section">
+        <div class="panel-header">
+            <h3 class="panel-title">Dispense</h3>
+            <lightning-button
+                label="Add Dispense Row"
+                icon-name="utility:add"
+                onclick={handleAddRow}
+                disabled={addDisabled}
+            ></lightning-button>
+        </div>
+
+        <template if:false={hasScopedBrands}>
+            <p class="empty-hint">Select brands on the Products tab first. Dispense options are limited to those brands.</p>
+        </template>
+
+        <template if:true={hasScopedBrands}>
+            <template for:each={displaySamples} for:item="row" for:index="index">
+                <article key={row.key} class="sample-card">
+                    <template if:true={row.productName}>
+                        <div class="sample-product-header">
+                            <c-product-thumbnail
+                                image-url={row.imageUrl}
+                                product-name={row.productName}
+                                size="sm"
+                            ></c-product-thumbnail>
+                            <span class="sample-product-name">{row.productName}</span>
+                        </div>
+                    </template>
+                    <lightning-combobox
+                        label="Product"
+                        value={row.productId}
+                        options={productOptions}
+                        data-index={index}
+                        data-field="productId"
+                        onchange={handleFieldChange}
+                        disabled={disabled}
+                        placeholder="Select sample or brand reminder"
+                    ></lightning-combobox>
+                    <div class="sample-grid">
+                        <lightning-input
+                            type="number"
+                            label="Quantity"
+                            value={row.quantity}
+                            data-index={index}
+                            data-field="quantity"
+                            onchange={handleFieldChange}
+                            disabled={disabled}
+                            min="1"
+                        ></lightning-input>
+                        <lightning-combobox
+                            label="Recipient"
+                            value={row.visitAttendeeId}
+                            options={attendeeOptions}
+                            data-index={index}
+                            data-field="visitAttendeeId"
+                            onchange={handleFieldChange}
+                            disabled={disabled}
+                            placeholder="Optional attendee"
+                        ></lightning-combobox>
+                    </div>
+                    <lightning-button
+                        label="Remove"
+                        data-index={index}
+                        onclick={handleRemoveRow}
+                        disabled={disabled}
+                    ></lightning-button>
+                </article>
+            </template>
+
+            <template if:false={displaySamples.length}>
+                <p class="empty-hint">Add dispense lines to record samples or brand reminders given on this call.</p>
+            </template>
+        </template>
+    </section>
+</template>

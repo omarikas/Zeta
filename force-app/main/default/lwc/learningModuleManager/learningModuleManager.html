@@ -1,0 +1,286 @@
+<template>
+    <section class="template-manager">
+        <header class="manager-header">
+            <div class="manager-filters">
+                <lightning-input
+                    type="search"
+                    label="Search"
+                    value={searchTerm}
+                    onchange={handleSearch}
+                ></lightning-input>
+                <lightning-combobox
+                    label="Type"
+                    value={typeFilter}
+                    options={typeOptions}
+                    onchange={handleTypeFilter}
+                ></lightning-combobox>
+                <lightning-combobox
+                    label="Status"
+                    value={activeFilter}
+                    options={activeOptions}
+                    onchange={handleActiveFilter}
+                ></lightning-combobox>
+            </div>
+            <lightning-button label="New Material" variant="brand" onclick={handleNew}></lightning-button>
+        </header>
+
+        <div class="manager-body">
+            <div class="accordion-pane">
+                <template if:true={hasGroups}>
+                    <template for:each={accordionGroups} for:item="group">
+                        <article key={group.id} class={group.groupClass}>
+                            <header class="accordion-header">
+                                <button
+                                    class="expand-btn"
+                                    type="button"
+                                    data-id={group.id}
+                                    onclick={handleToggleExpand}
+                                    title="Expand or collapse"
+                                >
+                                    <lightning-icon icon-name={group.chevronIcon} size="x-small"></lightning-icon>
+                                </button>
+                                <button
+                                    class="select-btn"
+                                    type="button"
+                                    data-id={group.id}
+                                    onclick={handleSelectParent}
+                                >
+                                    <lightning-icon icon-name={group.iconName} size="small"></lightning-icon>
+                                    <span class="select-copy">
+                                        <span class="select-title">{group.title}</span>
+                                        <span class="select-meta">{group.parentMetaLabel}</span>
+                                    </span>
+                                </button>
+                            </header>
+
+                            <template if:true={group.expanded}>
+                                <ul class="child-list">
+                                    <template if:true={group.hasChildren}>
+                                        <template for:each={group.children} for:item="child">
+                                            <li key={child.id}>
+                                                <button
+                                                    class={child.childClass}
+                                                    type="button"
+                                                    data-id={child.id}
+                                                    onclick={handleSelectChild}
+                                                >
+                                                    <lightning-icon
+                                                        icon-name={child.iconName}
+                                                        size="x-small"
+                                                    ></lightning-icon>
+                                                    <span class="child-copy">
+                                                        <span class="child-title">{child.title}</span>
+                                                        <span class="child-meta">{child.metaLabel}</span>
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        </template>
+                                    </template>
+                                    <template if:false={group.hasChildren}>
+                                        <li class="child-empty">No child materials yet.</li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </article>
+                    </template>
+                </template>
+                <template if:false={hasGroups}>
+                    <p class="empty">No learning materials found.</p>
+                </template>
+            </div>
+
+            <aside class="detail-pane">
+                <template if:true={hasSelection}>
+                    <div class="detail-card">
+                        <header class="detail-header">
+                            <div>
+                                <h2>{detailHeading}</h2>
+                                <p class="detail-sub">{editMaterialType}</p>
+                            </div>
+                            <lightning-button label="Open record" onclick={handleOpenRecord}></lightning-button>
+                        </header>
+
+                        <lightning-input
+                            label="Title"
+                            value={editTitle}
+                            onchange={handleEditTitle}
+                        ></lightning-input>
+
+                        <template if:true={showTypePicker}>
+                            <lightning-combobox
+                                class="slds-m-top_small"
+                                label="Type"
+                                value={editMaterialType}
+                                options={childTypeOptions}
+                                onchange={handleEditMaterialType}
+                            ></lightning-combobox>
+                        </template>
+
+                        <lightning-textarea
+                            class="slds-m-top_small"
+                            label="Description / content"
+                            value={editDescription}
+                            onchange={handleEditDescription}
+                        ></lightning-textarea>
+
+                        <template if:true={showUrlField}>
+                            <lightning-input
+                                class="slds-m-top_small"
+                                type="url"
+                                label="Content URL"
+                                value={editMaterialUrl}
+                                onchange={handleEditMaterialUrl}
+                                placeholder="https://..."
+                            ></lightning-input>
+                        </template>
+
+                        <lightning-input
+                            class="slds-m-top_small"
+                            type="number"
+                            label="Duration (minutes)"
+                            value={editDuration}
+                            onchange={handleEditDuration}
+                        ></lightning-input>
+                        <lightning-input
+                            class="slds-m-top_small"
+                            type="checkbox"
+                            label="Active"
+                            checked={editActive}
+                            onchange={handleEditActive}
+                        ></lightning-input>
+
+                        <div class="detail-actions">
+                            <lightning-button
+                                variant="brand"
+                                label="Save changes"
+                                disabled={isSaveDisabled}
+                                onclick={handleSaveItem}
+                            ></lightning-button>
+                        </div>
+                    </div>
+
+                    <template if:true={isQuizSelected}>
+                        <div class="detail-card">
+                            <header class="detail-header">
+                                <div>
+                                    <h2>Quiz questions</h2>
+                                    <p class="detail-sub">Edit exam content inline</p>
+                                </div>
+                            </header>
+                            <c-quiz-question-editor record-id={selectedChildId}></c-quiz-question-editor>
+                        </div>
+                    </template>
+
+                    <template if:true={isEditingParent}>
+                        <div class="detail-card">
+                            <header class="detail-header">
+                                <div>
+                                    <h2>Assigned learners</h2>
+                                    <p class="detail-sub">Course-level assignments and progress</p>
+                                </div>
+                            </header>
+
+                            <div class="assign-box">
+                                <lightning-record-picker
+                                    label="Add learner"
+                                    placeholder="Search users..."
+                                    object-api-name="User"
+                                    onchange={handleAssignUser}
+                                ></lightning-record-picker>
+                                <lightning-button
+                                    class="slds-m-top_small"
+                                    variant="brand"
+                                    label="Assign"
+                                    disabled={isAssignDisabled}
+                                    onclick={handleAssign}
+                                ></lightning-button>
+                            </div>
+
+                            <template if:true={assigneesLoading}>
+                                <lightning-spinner
+                                    alternative-text="Loading assignees"
+                                    size="small"
+                                ></lightning-spinner>
+                            </template>
+
+                            <template if:true={hasAssignees}>
+                                <table class="assignee-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Learner</th>
+                                            <th>Status</th>
+                                            <th>Progress</th>
+                                            <th>Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={assigneeRows} for:item="row">
+                                            <tr key={row.instanceId}>
+                                                <td>
+                                                    <div class="assignee-name">{row.userName}</div>
+                                                    <div class="assignee-email">{row.userEmail}</div>
+                                                </td>
+                                                <td>{row.status}</td>
+                                                <td>{row.progressLabel}</td>
+                                                <td>{row.scoreLabel}</td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                            <template if:false={hasAssignees}>
+                                <p class="empty">No one is assigned yet. Add a learner above.</p>
+                            </template>
+                        </div>
+                    </template>
+                </template>
+                <template if:false={hasSelection}>
+                    <div class="detail-empty">
+                        <lightning-icon icon-name="utility:education" size="medium"></lightning-icon>
+                        <h2>Select a course or child item</h2>
+                        <p>
+                            Expand a course, then click a parent to manage assignments, or click a child to edit
+                            URL / content / quiz questions.
+                        </p>
+                    </div>
+                </template>
+            </aside>
+        </div>
+    </section>
+
+    <template if:true={showNewModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open slds-modal_small">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">New Learning Material</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input label="Title" value={newTitle} onchange={handleNewTitle}></lightning-input>
+                    <lightning-combobox
+                        class="slds-m-top_small"
+                        label="Type"
+                        value={newType}
+                        options={newTypeOptions}
+                        onchange={handleNewType}
+                    ></lightning-combobox>
+                    <template if:true={isEditingParent}>
+                        <p class="slds-m-top_small slds-text-body_small">
+                            Non-course items will be created under the selected parent.
+                        </p>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={handleCloseNew}></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        variant="brand"
+                        label="Create"
+                        disabled={isNewDisabled}
+                        onclick={handleCreate}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

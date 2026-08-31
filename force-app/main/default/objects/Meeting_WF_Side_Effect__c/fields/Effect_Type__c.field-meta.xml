@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Effect_Type__c</fullName>
+    <description>Meeting WF config</description>
+    <label>Effect Type</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Notify</fullName>
+                <default>false</default>
+                <label>Notify</label>
+            </value>
+            <value>
+                <fullName>Validate</fullName>
+                <default>false</default>
+                <label>Validate</label>
+            </value>
+            <value>
+                <fullName>SetFlags</fullName>
+                <default>false</default>
+                <label>SetFlags</label>
+            </value>
+            <value>
+                <fullName>WriteHistory</fullName>
+                <default>true</default>
+                <label>WriteHistory</label>
+            </value>
+            <value>
+                <fullName>RecalcActuals</fullName>
+                <default>false</default>
+                <label>RecalcActuals</label>
+            </value>
+            <value>
+                <fullName>CustomInvocable</fullName>
+                <default>false</default>
+                <label>CustomInvocable</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

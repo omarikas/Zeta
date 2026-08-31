@@ -1,0 +1,224 @@
+<template>
+    <article class="today-plan-card">
+        <header class="today-plan-header">
+            <div class="today-plan-heading">
+                <div class="today-plan-heading-row">
+                    <h2 class="today-plan-title">Today’s Plan</h2>
+                    <template if:true={showSyncChip}>
+                        <span class={syncChipClass} aria-live="polite">{syncChipLabel}</span>
+                    </template>
+                </div>
+                <p class="today-plan-subtitle">{planSubtitle}</p>
+                <template if:true={canSwitchView}>
+                    <label class="today-plan-rep-picker-label">
+                        View plan for
+                        <select
+                            class="today-plan-rep-picker"
+                            onchange={handleContextUserChange}
+                        >
+                            <template for:each={viewerOptions} for:item="opt">
+                                <option key={opt.key} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                            </template>
+                        </select>
+                    </label>
+                </template>
+                <template if:true={viewingOtherBanner}>
+                    <div class="viewing-other-banner">{viewingOtherBanner}</div>
+                </template>
+            </div>
+            <div class="today-plan-header-actions">
+                <button
+                    type="button"
+                    class="plan-btn plan-btn-neutral"
+                    title={googleNavigateTitle}
+                    onclick={handleNavigateGoogle}
+                    disabled={isGoogleNavigateDisabled}
+                >
+                    Navigate on Google
+                </button>
+                <template if:true={showOpenPlanner}>
+                    <button type="button" class="plan-btn plan-btn-neutral" onclick={handleOpenPlanner}>
+                        Open Planner
+                    </button>
+                </template>
+            </div>
+        </header>
+
+        <div class="today-plan-body">
+            <template if:true={showErrorBanner}>
+                <div class="error-banner" role="alert">{errorMessage}</div>
+            </template>
+            <template if:true={noticeMessage}>
+                <div class={noticeClass} role="status">{noticeMessage}</div>
+            </template>
+
+            <div class="plan-layout">
+                <div class="visit-list-col">
+                    <div class="sidebar-section-title">Route stops</div>
+                    <template if:true={showUnlinkedNote}>
+                        <div class="unlinked-note">{unlinkedNote}</div>
+                    </template>
+
+                    <template if:true={hasRouteOutliers}>
+                        <div class="route-outlier-card">
+                            <div class="sidebar-section-title">Distant stops</div>
+                            <p class="route-outlier-summary">{distantStopsSummary}</p>
+                            <ul class="route-outlier-list">
+                                <template for:each={decoratedRouteOutliers} for:item="outlier">
+                                    <li key={outlier.visitId} class="route-outlier-item">
+                                        <div>
+                                            <strong>{outlier.accountName}</strong> — {outlier.awayLabel}
+                                        </div>
+                                        <template if:true={outlier.canAct}>
+                                            <div class="route-stop-actions">
+                                                <button
+                                                    type="button"
+                                                    class="plan-btn plan-btn-neutral"
+                                                    data-visit-id={outlier.visitId}
+                                                    onclick={handlePostponeVisit}
+                                                    disabled={isMutatingVisit}
+                                                >
+                                                    Postpone to tomorrow
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="plan-btn plan-btn-destructive"
+                                                    data-visit-id={outlier.visitId}
+                                                    onclick={handleRemoveVisit}
+                                                    disabled={isMutatingVisit}
+                                                >
+                                                    Remove visit
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+
+                    <div class="visit-list">
+                        <template for:each={upNextVisits} for:item="v">
+                            <div
+                                key={v.id}
+                                class={v.stopClass}
+                                data-visit-id={v.id}
+                                onclick={handleSelectVisit}
+                                role="button"
+                                tabindex="0"
+                            >
+                                <span class={v.orderClass}>{v.orderLabel}</span>
+                                <div class="route-stop-body">
+                                    <button
+                                        type="button"
+                                        class="account-name-link"
+                                        data-account-id={v.accountId}
+                                        onclick={handleOpenAccount}
+                                    >
+                                        {v.accountName}
+                                    </button>
+                                    <div class="route-stop-type">{v.accountTypeLabel}</div>
+                                    <template if:true={v.accountSpecialty}>
+                                        <div class="route-stop-specialty">{v.accountSpecialty}</div>
+                                    </template>
+                                    <div class="route-stop-time">{v.timeLabel}</div>
+                                    <div class="route-stop-meta">
+                                        <span class={v.statusClass}>{v.statusLabel}</span>
+                                        <template if:true={v.isOutlier}>
+                                            <span class="outlier-badge" title="Far from other stops">Route outlier</span>
+                                        </template>
+                                        <template if:false={v.hasLocation}>
+                                            <span class="geo-warning">No geocode</span>
+                                        </template>
+                                    </div>
+                                    <div class="route-stop-actions">
+                                        <button
+                                            type="button"
+                                            class="plan-btn plan-btn-base"
+                                            data-visit-id={v.id}
+                                            onclick={handleOpenVisit}
+                                        >
+                                            View call
+                                        </button>
+                                        <template if:true={v.canMutate}>
+                                            <button
+                                                type="button"
+                                                class="plan-btn plan-btn-base"
+                                                data-visit-id={v.id}
+                                                onclick={handlePostponeVisit}
+                                                disabled={isMutatingVisit}
+                                            >
+                                                Postpone
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="plan-btn plan-btn-base"
+                                                data-visit-id={v.id}
+                                                onclick={handleRemoveVisit}
+                                                disabled={isMutatingVisit}
+                                            >
+                                                Remove
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template if:true={hasNoVisits}>
+                            <div class="empty-state">
+                                No account visits scheduled for today.
+                                <template if:true={showOpenPlanner}>
+                                    <button type="button" class="empty-link" onclick={handleOpenPlanner}>
+                                        Plan your day in Planner
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="map-col">
+                    <div class="map-wrapper">
+                        <div class="map-container" lwc:dom="manual"></div>
+                    </div>
+
+                    <div class="map-legend">
+                        <span class="legend-item"><span class="legend-pin legend-pin-hcp"></span>HCP</span>
+                        <span class="legend-item"><span class="legend-pin legend-pin-hco"></span>HCO</span>
+                    </div>
+
+                    <template if:true={routeSummary}>
+                        <div class="route-summary">
+                            <span class="route-summary-label">Route estimate</span>
+                            <span class="route-summary-value">
+                                {routeSummary.distanceKm} km · {routeSummary.durationMin} min drive
+                            </span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="ideas-panel">
+                <div class="sidebar-section-title">Optimization ideas</div>
+                <template if:true={hasOptimizationIdeas}>
+                    <ul class="ideas-list">
+                        <template for:each={optimizationIdeas} for:item="idea">
+                            <li key={idea.id} class={idea.itemClass}>
+                                <span class={idea.iconClass} aria-hidden="true">{idea.iconGlyph}</span>
+                                <div class="ideas-content">
+                                    <span class="ideas-text">{idea.text}</span>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template if:false={hasOptimizationIdeas}>
+                    <div class="ideas-empty">
+                        Add more geocoded visits or open Planner to see route optimization suggestions.
+                    </div>
+                </template>
+            </div>
+        </div>
+    </article>
+</template>

@@ -1,0 +1,274 @@
+<template>
+    <lightning-card title="Affiliations Network View" icon-name="standard:account">
+        <div slot="actions">
+            <lightning-button-icon
+                icon-name="utility:refresh"
+                alternative-text="Refresh"
+                title="Refresh"
+                onclick={handleRefresh}
+                variant="border-filled">
+            </lightning-button-icon>
+        </div>
+
+        <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3">
+                <div class="network-wrapper">
+                    <template if:true={isInitialLoading}>
+                        <div class="slds-is-relative slds-m-vertical_medium">
+                            <lightning-spinner alternative-text="Loading affiliations..." size="medium"></lightning-spinner>
+                            <p class="slds-text-align_center slds-m-top_small">Loading account affiliations...</p>
+                        </div>
+                    </template>
+
+                    <template if:true={error}>
+                        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                            <span class="slds-assistive-text">Error</span>
+                            <h2>{error}</h2>
+                        </div>
+                    </template>
+
+                    <template if:true={hasSelectedNode}>
+                        <div class="selected-node-bar slds-m-top_small">
+                            <div class="slds-media slds-media_center slds-has-flexi-truncate">
+                                <div class="slds-media__figure">
+                                    <lightning-icon icon-name={selectedNodeIcon} size="small"></lightning-icon>
+                                </div>
+                                <div class="slds-media__body slds-has-flexi-truncate">
+                                    <p class="slds-text-body_small slds-text-color_weak">Selected account</p>
+                                    <p class="slds-text-heading_small slds-truncate" title={selectedNodeLabel}>{selectedNodeLabel}</p>
+                                </div>
+                                <div class="slds-no-flex">
+                                    <lightning-button
+                                        label="View account"
+                                        icon-name="utility:new_window"
+                                        variant="brand"
+                                        onclick={handleViewSelectedAccount}>
+                                    </lightning-button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template if:false={isMobile}>
+                        <template if:true={showTreeView}>
+                            <div class="network-container slds-m-top_medium">
+                                <svg class="network-svg" lwc:dom="manual"></svg>
+                            </div>
+                        </template>
+                    </template>
+
+                    <template if:true={showLoadMore}>
+                        <div class="slds-m-top_small slds-text-align_center">
+                            <lightning-button
+                                label={loadMoreLabel}
+                                onclick={handleLoadMore}
+                                variant="neutral">
+                            </lightning-button>
+                        </div>
+                    </template>
+
+                    <template if:true={isLoadingMore}>
+                        <div class="slds-is-relative slds-m-vertical_small slds-text-align_center">
+                            <lightning-spinner alternative-text="Loading more affiliations..." size="small"></lightning-spinner>
+                        </div>
+                    </template>
+
+                    <template if:true={hasData}>
+                        <template if:false={showTreeView}>
+                            <div class="slds-m-top_medium">
+                                <div class="slds-m-top_medium">
+                                    <h3 class="slds-text-heading_small slds-m-bottom_small">Affiliated Accounts ({nodeCount})</h3>
+                                    <div class="slds-box slds-theme_default">
+                                        <ul class="slds-list_dotted slds-m-left_medium">
+                                            <template for:each={nodes} for:item="node">
+                                                <li key={node.id} class="slds-m-bottom_small">
+                                                    <div class="slds-grid slds-gutters">
+                                                        <div class="slds-col">
+                                                            <a href="#" onclick={handleNodeClick} data-node-id={node.id} class="slds-text-link">
+                                                                <lightning-icon icon-name={node.iconName} size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                                                                <strong>{node.label}</strong>
+                                                            </a>
+                                                            <template if:true={node.accountType}>
+                                                                <div class="slds-text-body_small slds-text-color_weak slds-m-left_large">
+                                                                    Type: {node.accountType}
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <div class="slds-col slds-no-flex">
+                                                            <lightning-button-icon
+                                                                icon-name="utility:new_window"
+                                                                alternative-text="Open account"
+                                                                title="Open account"
+                                                                onclick={handleNodeNavigate}
+                                                                data-node-id={node.id}
+                                                                variant="border-filled"
+                                                                size="small">
+                                                            </lightning-button-icon>
+                                                            <lightning-button-icon
+                                                                icon-name="utility:chevronright"
+                                                                alternative-text="Expand"
+                                                                title="Expand"
+                                                                onclick={handleNodeClick}
+                                                                data-node-id={node.id}
+                                                                variant="border-filled"
+                                                                size="small">
+                                                            </lightning-button-icon>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+
+                                    <template if:true={hasEdges}>
+                                        <div class="slds-m-top_medium">
+                                            <h3 class="slds-text-heading_small slds-m-bottom_small">Relationships ({edgeCount})</h3>
+                                            <div class="slds-box slds-theme_default">
+                                                <ul class="slds-list_dotted slds-m-left_medium">
+                                                    <template for:each={edgesWithLabels} for:item="edge">
+                                                        <li key={edge.id} class="slds-m-bottom_x-small">
+                                                            <span class="slds-text-body_regular">
+                                                                <strong>{edge.fromLabel}</strong>
+                                                                <span class="slds-badge slds-badge_inverse slds-m-horizontal_x-small">{edge.label}</span>
+                                                                →
+                                                                <strong>{edge.toLabel}</strong>
+                                                            </span>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+
+                    <template if:false={hasData}>
+                        <template if:true={initialLoadComplete}>
+                            <div class="slds-illustration slds-illustration_small">
+                                <div class="slds-text-align_center slds-m-vertical_large">
+                                    <h3 class="slds-text-heading_medium">No Affiliations Found</h3>
+                                    <p class="slds-text-body_regular slds-m-top_small">
+                                        This account does not have any affiliations matching the current filters.
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3">
+                <div class="filter-panel slds-card">
+                    <div class="slds-card__header slds-grid">
+                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                            <div class="slds-media__figure">
+                                <lightning-icon icon-name="utility:filterList" size="small"></lightning-icon>
+                            </div>
+                            <div class="slds-media__body">
+                                <h2 class="slds-card__header-title">
+                                    <span>Filter</span>
+                                </h2>
+                            </div>
+                        </header>
+                        <div class="slds-no-flex">
+                            <lightning-button-icon
+                                icon-name="utility:down"
+                                alternative-text="Collapse"
+                                title="Collapse"
+                                onclick={toggleFilterPanel}
+                                variant="border-filled"
+                                class="filter-toggle">
+                            </lightning-button-icon>
+                        </div>
+                    </div>
+
+                    <div class="slds-card__body slds-card__body_inner filter-content">
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-combobox
+                                name="role"
+                                label="Roles"
+                                value={filters.role}
+                                options={roleOptions}
+                                data-field="role"
+                                onchange={handleFilterChange}>
+                            </lightning-combobox>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-input
+                                type="toggle"
+                                label="Show Inactive"
+                                data-field="showInactive"
+                                checked={filters.showInactive}
+                                onchange={handleFilterChange}>
+                            </lightning-input>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-input
+                                type="toggle"
+                                label="Show Outside Territory"
+                                data-field="showOutsideTerritory"
+                                checked={filters.showOutsideTerritory}
+                                onchange={handleFilterChange}>
+                            </lightning-input>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-combobox
+                                name="strength"
+                                label="Strength"
+                                value={filters.strength}
+                                options={strengthOptions}
+                                data-field="strength"
+                                onchange={handleFilterChange}>
+                            </lightning-combobox>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-combobox
+                                name="relationType"
+                                label="Affiliation Type"
+                                value={filters.relationType}
+                                options={relationTypeOptions}
+                                data-field="relationType"
+                                onchange={handleFilterChange}>
+                            </lightning-combobox>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-combobox
+                                name="direction"
+                                label="Direction"
+                                value={filters.direction}
+                                options={directionOptions}
+                                data-field="direction"
+                                onchange={handleFilterChange}>
+                            </lightning-combobox>
+                        </div>
+
+                        <div class="slds-form-element slds-m-bottom_small">
+                            <lightning-combobox
+                                name="maxDepth"
+                                label="Tree depth"
+                                value={filters.maxDepth}
+                                options={depthOptions}
+                                data-field="maxDepth"
+                                onchange={handleFilterChange}>
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slds-m-top_medium slds-text-body_small slds-text-color_weak">
+                    <p>
+                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        Use <strong>Tree depth</strong> to show 1–3 levels. Each level shows 3 accounts initially — hover or click <strong>⋯</strong> to load more. Click <strong>▶ / ▼</strong> to expand or collapse a branch. Click the blue <strong>+</strong> to load that account's affiliations. Click a node to select it; click the same node again to open that account.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>

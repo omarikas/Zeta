@@ -1,0 +1,24 @@
+<template>
+    <div class="slds-form-element">
+        <template if:true={label}>
+            <label class="slds-form-element__label">{label}</label>
+        </template>
+        <div class="slds-form-element__control">
+            <select
+                class="slds-select"
+                disabled={disabled}
+                required={required}
+                onchange={handleChange}
+            >
+                <template if:true={placeholder}>
+                    <option value="">{placeholder}</option>
+                </template>
+                <template for:each={computedOptions} for:item="opt">
+                    <option key={opt.value} value={opt.value} selected={opt.selected}>
+                        {opt.label}
+                    </option>
+                </template>
+            </select>
+        </div>
+    </div>
+</template>

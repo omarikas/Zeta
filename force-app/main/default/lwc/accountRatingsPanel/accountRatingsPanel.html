@@ -1,0 +1,112 @@
+<template>
+    <section class="account-ratings-panel">
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading ratings" size="small"></lightning-spinner>
+        </template>
+
+        <template lwc:elseif={errorMessage}>
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+                <span>{errorMessage}</span>
+            </div>
+        </template>
+
+        <template lwc:elseif={hasLayout}>
+            <div class="panel-header">
+                <p class="territory-subtitle">{territorySubtitle}</p>
+                <template lwc:if={showSaveStatus}>
+                    <span class={saveStatusClass} role="status">{saveStatusLabel}</span>
+                </template>
+            </div>
+
+            <c-rating-form-renderer
+                key={ratingsRenderKey}
+                data-territory-ratings
+                layout-json={layoutJson}
+                values-json={territoryValuesJson}
+                section-filter="account,accountTerritory"
+                show-section-headers
+                onvaluechange={handleTerritoryValueChange}
+            ></c-rating-form-renderer>
+
+            <h3 class="product-heading">{productSectionHeading}</h3>
+            <template lwc:if={hasAlignedProducts}>
+                <template for:each={alignedProducts} for:item="product">
+                    <article key={product.product2Id} class="product-rating-row">
+                        <div class="product-row-header">
+                            <c-product-thumbnail
+                                image-url={product.imageUrl}
+                                product-name={product.productName}
+                                size="md"
+                            ></c-product-thumbnail>
+                            <h4 class="product-row-title">{product.productName}</h4>
+                        </div>
+                        <c-rating-form-renderer
+                            key={product.renderKey}
+                            data-product-id={product.product2Id}
+                            layout-json={layoutJson}
+                            values-json={product.valuesJson}
+                            section-filter="accountTerritoryProduct"
+                            show-section-headers={productShowSectionHeaders}
+                            onvaluechange={handleProductValueChange}
+                        ></c-rating-form-renderer>
+                    </article>
+                </template>
+            </template>
+            <template lwc:else>
+                <p class="empty-products">{noProductsMessage}</p>
+            </template>
+
+            <section class="validity-section">
+                <header class="validity-header">
+                    <h3 class="validity-heading">Rating Validity</h3>
+                    <p class="validity-subtext">{validitySubtext}</p>
+                </header>
+
+                <article class="validity-card">
+                    <div class="validity-actions">
+                        <lightning-button
+                            variant="neutral"
+                            label="Check Rating Validity"
+                            onclick={handleCheckValidity}
+                            disabled={isValidityChecking}
+                        ></lightning-button>
+                    </div>
+
+                    <template lwc:if={isValidityChecking}>
+                        <div class="validity-loading">
+                            <lightning-spinner alternative-text="Checking rating validity" size="small"></lightning-spinner>
+                        </div>
+                    </template>
+
+                    <template lwc:if={hasValidityResult}>
+                        <template lwc:if={showValidityFallbackBanner}>
+                            <div class="validity-fallback-banner" role="status">
+                                <span>{validityResult.fallbackMessage}</span>
+                            </div>
+                        </template>
+
+                        <div class="validity-result">
+                            <div class={validityScoreClass}>
+                                <span class="validity-score-value">{validityResult.validityScore}</span>
+                                <span class="validity-score-label">Validity</span>
+                            </div>
+                            <div class="validity-details">
+                                <p class="validity-summary">{validityResult.summary}</p>
+                                <ul class="validity-reasons">
+                                    <template for:each={validityReasons} for:item="reason">
+                                        <li key={reason.key} class="validity-reason">{reason.text}</li>
+                                    </template>
+                                </ul>
+                                <span class={validitySourceChipClass}>{validitySourceLabel}</span>
+                            </div>
+                        </div>
+                    </template>
+                </article>
+            </section>
+        </template>
+
+        <template lwc:else>
+            <p class="empty">No deployed rating layout configured.</p>
+        </template>
+    </section>
+</template>

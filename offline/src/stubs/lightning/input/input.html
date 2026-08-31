@@ -1,0 +1,22 @@
+<template>
+    <div class="slds-form-element">
+        <template if:true={label}>
+            <label class="slds-form-element__label">{label}</label>
+        </template>
+        <div class="slds-form-element__control">
+            <input
+                type={actualType}
+                class="slds-input"
+                value={value}
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+                min={min}
+                max={max}
+                step={step}
+                oninput={handleInput}
+                onchange={handleChange}
+            />
+        </div>
+    </div>
+</template>

@@ -1,0 +1,81 @@
+<template>
+    <article class="nbc-card">
+        <header class="nbc-header">
+            <div class="nbc-heading-row">
+                <div>
+                    <h2 class="nbc-title">Top 5 NBC</h2>
+                    <p class="nbc-subtitle">(Next best customers)</p>
+                </div>
+                <template if:true={showSyncChip}>
+                    <span class={syncChipClass} aria-live="polite">{syncChipLabel}</span>
+                </template>
+            </div>
+        </header>
+
+        <div class="nbc-body">
+            <template if:true={showErrorBanner}>
+                <div class="error-banner" role="alert">{errorMessage}</div>
+            </template>
+            <template if:true={noticeMessage}>
+                <div class={noticeClass} role="status">{noticeMessage}</div>
+            </template>
+
+            <div class="nbc-list">
+                <template if:true={hasRows}>
+                    <template for:each={rows} for:item="row">
+                        <div key={row.accountId} class="nbc-row">
+                            <div class={row.rankIconClass} title={row.rankLabel} aria-label={row.rankLabel}>
+                                <span class="rank-glyph" aria-hidden="true">{row.rankGlyph}</span>
+                            </div>
+
+                            <div class="cell account">
+                                <button
+                                    type="button"
+                                    class="account-link"
+                                    data-account-id={row.accountId}
+                                    onclick={handleOpenAccount}
+                                >
+                                    {row.accountName}
+                                </button>
+                            </div>
+
+                            <div class="cell call-plan">
+                                <div class="cell-label">CALL PLAN</div>
+                                <div class="cell-value">{row.callPlanLabel}</div>
+                            </div>
+
+                            <div class="cell planned">
+                                <div class="cell-label">PLANNED</div>
+                                <div class="cell-value">{row.plannedLabel}</div>
+                            </div>
+
+                            <div class="cell score">
+                                <div class="cell-label">SCORE</div>
+                                <div class="score-circle">
+                                    <span class="score-value">{row.scoreDisplay}</span>
+                                </div>
+                            </div>
+
+                            <div class="cell action">
+                                <div class="cell-label">ACTION</div>
+                                <button
+                                    type="button"
+                                    class="plan-btn plan-btn-neutral"
+                                    title="Create a draft call for this account"
+                                    data-account-id={row.accountId}
+                                    onclick={handleCall}
+                                >
+                                    Plan call
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+
+                <template if:false={hasRows}>
+                    <div class="empty-state">No next best customers available.</div>
+                </template>
+            </div>
+        </div>
+    </article>
+</template>

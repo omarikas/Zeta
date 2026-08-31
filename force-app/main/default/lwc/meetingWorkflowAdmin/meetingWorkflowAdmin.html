@@ -1,0 +1,332 @@
+<template>
+    <lightning-card title="Meeting Workflow Manager" icon-name="standard:calibration">
+        <div slot="actions">
+            <template lwc:if={hasSelection}>
+                <template lwc:if={readOnlyBanner}>
+                    <lightning-button
+                        label="Edit as new draft"
+                        onclick={cloneToDraft}
+                        disabled={busy}
+                        class="slds-m-right_x-small"
+                    ></lightning-button>
+                </template>
+                <template lwc:else>
+                    <lightning-button
+                        label="Publish"
+                        variant="brand"
+                        onclick={handlePublishSelected}
+                        disabled={busy}
+                        class="slds-m-right_x-small"
+                    ></lightning-button>
+                </template>
+                <lightning-button label="All meeting types" onclick={handleBack} disabled={busy}></lightning-button>
+            </template>
+            <template lwc:else>
+                <lightning-button label="Seed starter templates" onclick={handleSeed} disabled={busy}></lightning-button>
+            </template>
+        </div>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template lwc:if={errorMessage}>
+                <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+            </template>
+            <template lwc:if={busy}>
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </template>
+
+            <template lwc:if={hasSelection}>
+                <template lwc:if={readOnlyBanner}>
+                    <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small" role="alert">
+                        This version is live. Click <strong>Edit as new draft</strong> to change stages, related lists, or approvals. Publishing the draft replaces the live workflow for this meeting type.
+                    </div>
+                </template>
+
+                <div class="slds-m-bottom_medium">
+                    <p class="slds-text-title_caps">{workflowTypeLabel}</p>
+                    <h2 class="slds-text-heading_medium">{workflowName}</h2>
+                    <p class="slds-text-body_small slds-text-color_weak">{statusBadge} ? {versionLabel}</p>
+                </div>
+
+                <lightning-tabset>
+                    <lightning-tab label="1. Stages">
+                        <p class="slds-m-top_small slds-m-bottom_small slds-text-body_regular">
+                            These stages appear as the Path on the Meeting record. Order them the way a meeting should move.
+                        </p>
+                        <template for:each={draftStatuses} for:item="row">
+                            <div key={row._key} class="slds-box slds-m-bottom_small slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <lightning-input
+                                        label="Stage name"
+                                        value={row.Status_Label__c}
+                                        data-key={row._key}
+                                        data-field="Status_Label__c"
+                                        onchange={handleStatusField}
+                                        disabled={readOnlyBanner}
+                                    ></lightning-input>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                                    <lightning-input
+                                        label="Stored value"
+                                        value={row.Status_Value__c}
+                                        data-key={row._key}
+                                        data-field="Status_Value__c"
+                                        onchange={handleStatusField}
+                                        disabled={readOnlyBanner}
+                                        field-level-help="Must match the Meeting Status picklist value."
+                                    ></lightning-input>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-grid slds-grid_vertical-align-end">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label="End of path"
+                                        checked={row.Is_Terminal__c}
+                                        data-key={row._key}
+                                        data-field="Is_Terminal__c"
+                                        onchange={handleStatusField}
+                                        disabled={readOnlyBanner}
+                                        class="slds-m-right_small"
+                                    ></lightning-input>
+                                    <lightning-button-icon icon-name="utility:arrowup" alternative-text="Move up" data-key={row._key} data-direction="up" onclick={moveStatus} disabled={readOnlyBanner} class="slds-m-right_xx-small"></lightning-button-icon>
+                                    <lightning-button-icon icon-name="utility:arrowdown" alternative-text="Move down" data-key={row._key} data-direction="down" onclick={moveStatus} disabled={readOnlyBanner} class="slds-m-right_xx-small"></lightning-button-icon>
+                                    <lightning-button-icon icon-name="utility:delete" alternative-text="Remove" data-key={row._key} onclick={removeStatus} disabled={readOnlyBanner}></lightning-button-icon>
+                                </div>
+                            </div>
+                        </template>
+                        <template lwc:if={isEditable}>
+                            <lightning-button label="Add stage" onclick={addStatus} class="slds-m-right_small"></lightning-button>
+                            <lightning-button label="Save stages" variant="brand" onclick={saveStatusPath} disabled={busy}></lightning-button>
+                        </template>
+                    </lightning-tab>
+
+                    <lightning-tab label="2. Related lists">
+                        <p class="slds-m-top_small slds-m-bottom_small">
+                            For each stage, choose whether a related list is hidden, view-only, or open for add &amp; edit (organizer).
+                        </p>
+                        <div class="matrix-wrap slds-scrollable_x">
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Related list</th>
+                                        <template for:each={draftStatuses} for:item="stage">
+                                            <th key={stage._key} scope="col">{stage.Status_Label__c}</th>
+                                        </template>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={matrixRows} for:item="listRow">
+                                        <tr key={listRow.key}>
+                                            <th scope="row">{listRow.label}</th>
+                                            <template for:each={listRow.cells} for:item="cell">
+                                                <td key={cell.key}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={cell.statusLabel}
+                                                        value={cell.access}
+                                                        options={accessOptions}
+                                                        data-list-key={listRow.key}
+                                                        data-status={cell.statusValue}
+                                                        onchange={handleMatrixAccess}
+                                                        disabled={readOnlyBanner}
+                                                    ></lightning-combobox>
+                                                </td>
+                                            </template>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <template lwc:if={isEditable}>
+                            <div class="slds-m-top_small">
+                                <lightning-button label="Save related lists" variant="brand" onclick={saveMatrix} disabled={busy}></lightning-button>
+                            </div>
+                        </template>
+                    </lightning-tab>
+
+                    <lightning-tab label="3. Approvals">
+                        <p class="slds-m-top_small slds-m-bottom_small">
+                            Decide who receives the meeting after Submit, and when a stage can be skipped.
+                        </p>
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-combobox
+                                    label="First approver"
+                                    value={firstApproverMode}
+                                    options={firstApproverOptions}
+                                    data-field="firstApproverMode"
+                                    onchange={handleApprovalField}
+                                    disabled={readOnlyBanner}
+                                    field-level-help="Typically the meeting owner's manager."
+                                ></lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-combobox
+                                    label="Second approver"
+                                    value={secondApproverMode}
+                                    options={secondApproverOptions}
+                                    data-field="secondApproverMode"
+                                    onchange={handleApprovalField}
+                                    disabled={readOnlyBanner}
+                                ></lightning-combobox>
+                            </div>
+                            <template lwc:if={showSecondRole}>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input
+                                        label="Role developer names"
+                                        value={secondApproverRoles}
+                                        data-field="secondApproverRoles"
+                                        onchange={handleApprovalField}
+                                        disabled={readOnlyBanner}
+                                        field-level-help="Comma-separated Salesforce Role developer names."
+                                    ></lightning-input>
+                                </div>
+                            </template>
+                            <template lwc:if={showSecondGroup}>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input
+                                        label="Public group developer name"
+                                        value={secondApproverGroup}
+                                        data-field="secondApproverGroup"
+                                        onchange={handleApprovalField}
+                                        disabled={readOnlyBanner}
+                                    ></lightning-input>
+                                </div>
+                            </template>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <lightning-input
+                                    label="Only when owner profile is"
+                                    value={ownerProfileFilter}
+                                    data-field="ownerProfileFilter"
+                                    onchange={handleApprovalField}
+                                    disabled={readOnlyBanner}
+                                    field-level-help="Optional. Leave blank to apply for every owner."
+                                ></lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-grid slds-grid_vertical-align-end">
+                                <lightning-input
+                                    type="checkbox"
+                                    label="Add manager as Approver member on the meeting"
+                                    checked={createManagerAsApprover}
+                                    data-field="createManagerAsApprover"
+                                    onchange={handleApprovalField}
+                                    disabled={readOnlyBanner}
+                                ></lightning-input>
+                            </div>
+                        </div>
+
+                        <h3 class="slds-text-heading_small slds-m-top_medium">Skip a person / stage</h3>
+                        <p class="slds-text-body_small slds-m-bottom_small">
+                            Example: if the owner?s title contains ?Manager?, skip Pending Approval and go straight to Approved.
+                        </p>
+                        <template for:each={skipRules} for:item="row">
+                            <div key={row._key} class="slds-box slds-m-bottom_small slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                                    <lightning-input label="When title contains" value={row.Condition_Values__c} data-key={row._key} data-field="Condition_Values__c" onchange={handleSkipField} disabled={readOnlyBanner}></lightning-input>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                                    <lightning-combobox label="From stage" value={row.From_Status__c} options={statusOptions} data-key={row._key} data-field="From_Status__c" onchange={handleSkipField} disabled={readOnlyBanner}></lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4">
+                                    <lightning-combobox label="Skip to stage" value={row.To_Status__c} options={statusOptions} data-key={row._key} data-field="To_Status__c" onchange={handleSkipField} disabled={readOnlyBanner}></lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-grid slds-grid_vertical-align-end">
+                                    <lightning-button-icon icon-name="utility:delete" alternative-text="Remove" data-key={row._key} onclick={removeSkip} disabled={readOnlyBanner}></lightning-button-icon>
+                                </div>
+                            </div>
+                        </template>
+                        <template lwc:if={isEditable}>
+                            <lightning-button label="Add skip rule" onclick={addSkip} class="slds-m-right_small"></lightning-button>
+                            <lightning-button label="Save approvals" variant="brand" onclick={saveApprovals} disabled={busy}></lightning-button>
+                        </template>
+                    </lightning-tab>
+
+                    <lightning-tab label="Publish history">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_small">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Version</th>
+                                    <th scope="col">Published</th>
+                                    <th scope="col">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={publishLogs} for:item="row">
+                                    <tr key={row.Id}>
+                                        <td>{row.Version__c}</td>
+                                        <td>{row.Published_Date__c}</td>
+                                        <td>{row.Notes__c}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </lightning-tab>
+                </lightning-tabset>
+            </template>
+
+            <template lwc:else>
+                <p class="slds-m-bottom_medium slds-text-body_regular">
+                    Choose a meeting type to define its Path stages, which related lists can be used at each stage, and who must approve.
+                </p>
+                <div class="slds-grid slds-wrap slds-gutters">
+                    <template for:each={typeCards} for:item="card">
+                        <div key={card.value} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                            <article class="slds-card slds-card_boundary">
+                                <div class="slds-card__header slds-grid">
+                                    <h3 class="slds-text-heading_small">{card.label}</h3>
+                                </div>
+                                <div class="slds-card__body slds-card__body_inner">
+                                    <p class="slds-text-body_small slds-text-color_weak">{card.statusText}</p>
+                                </div>
+                                <div class="slds-card__footer">
+                                    <lightning-button
+                                        label={card.actionLabel}
+                                        variant="brand"
+                                        data-type={card.value}
+                                        onclick={handleOpenType}
+                                        disabled={busy}
+                                    ></lightning-button>
+                                </div>
+                            </article>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+
+    <template lwc:if={showNewModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Create workflow</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input label="Name" value={newName} onchange={handleNewName} class="slds-m-bottom_small"></lightning-input>
+                    <lightning-combobox label="Family" value={newFamily} options={familyOptions} onchange={handleNewFamily}></lightning-combobox>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeNewModal}></lightning-button>
+                    <lightning-button class="slds-m-left_x-small" label="Create" variant="brand" onclick={createNew}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <template lwc:if={showPublishConfirm}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Publish this meeting type?</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p>Publishing makes these stages, related-list rules, and approval routing live for every meeting of this type. The previous published version is archived.</p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closePublishConfirm}></lightning-button>
+                    <lightning-button class="slds-m-left_x-small" label="Publish" variant="brand" onclick={confirmPublish}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

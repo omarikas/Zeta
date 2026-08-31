@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Workflow__c</fullName>
+    <description>Meeting WF config</description>
+    <label>Workflow</label>
+    <referenceTo>Meeting_Workflow__c</referenceTo>
+    <relationshipLabel>Side Effects</relationshipLabel>
+    <relationshipName>WF_Side_Effects</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Import_Batch__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Import Batch</label>
+    <referenceTo>Sales_Data_Import_Batch__c</referenceTo>
+    <relationshipLabel>Pharmacy Sales Withdrawals</relationshipLabel>
+    <relationshipName>Pharmacy_Sales_Withdrawals</relationshipName>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

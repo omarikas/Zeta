@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Data_Source__c</fullName>
+    <description>Primary sell-out data vendor for this brick geography.</description>
+    <label>Data Source</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>IQVIA IMS</fullName>
+                <default>true</default>
+                <label>IQVIA IMS</label>
+            </value>
+            <value>
+                <fullName>IbnSina</fullName>
+                <default>false</default>
+                <label>IbnSina</label>
+            </value>
+            <value>
+                <fullName>Pharmaoverseas</fullName>
+                <default>false</default>
+                <label>Pharmaoverseas</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

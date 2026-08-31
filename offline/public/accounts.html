@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176d3" />
+    <title>Accounts — Pharma Field PWA</title>
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="accounts.css" />
+</head>
+<body>
+    <header class="accounts-header">
+        <div class="nav-left">
+            <span class="nav-title">Accounts</span>
+        </div>
+        <div class="accounts-header-status">
+            <span id="sync-chip" class="sync-chip" style="display:none" aria-live="polite"></span>
+        </div>
+    </header>
+
+    <div class="toolbar" id="toolbar">
+        <input id="search-input" class="search-input" type="search" placeholder="Search by name, specialty, city..." aria-label="Search accounts" />
+        <div class="toolbar-actions">
+            <button id="btn-refresh" class="toolbar-btn" title="Refresh">↻</button>
+            <button id="btn-toggle-view" class="toolbar-btn">Map</button>
+        </div>
+    </div>
+
+    <div class="summary-cards" id="summary-cards">
+        <div class="summary-card"><span class="summary-value" id="total-count">0</span><span class="summary-label">Total</span></div>
+        <div class="summary-card"><span class="summary-value" id="in-plan-count">0</span><span class="summary-label">In Plan</span></div>
+        <div class="summary-card"><span class="summary-value" id="out-plan-count">0</span><span class="summary-label">Out of Plan</span></div>
+        <div class="summary-card summary-card-warn"><span class="summary-value" id="behind-count">0</span><span class="summary-label">Behind Pace</span></div>
+    </div>
+
+    <div class="collections" id="collections">
+        <div class="collections-section-title">My Lists</div>
+        <div class="collection-chips-row" id="collection-chips"></div>
+    </div>
+
+    <div id="list-view">
+        <div id="account-list" class="account-list"></div>
+        <div class="pagination" id="pagination" style="display:none">
+            <button id="btn-prev" class="page-btn">← Prev</button>
+            <span id="page-label" class="page-label"></span>
+            <button id="btn-next" class="page-btn">Next →</button>
+        </div>
+    </div>
+
+    <div id="map-view" class="map-view" style="display:none">
+        <div class="map-list">
+            <div class="map-list-header">
+                <span class="map-list-title">Accounts</span>
+                <span class="map-list-count" id="map-count"></span>
+            </div>
+            <ul id="map-account-list" class="map-account-items"></ul>
+            <div id="map-pagination" class="map-pagination" style="display:none">
+                <button id="btn-map-prev" class="page-btn">←</button>
+                <span id="map-page-label" class="page-label"></span>
+                <button id="btn-map-next" class="page-btn">→</button>
+            </div>
+        </div>
+        <div class="map-panel">
+            <div class="map-legend">
+                <span class="legend-pin legend-pin-high"></span> High
+                <span class="legend-pin legend-pin-med"></span> Med
+                <span class="legend-pin legend-pin-low"></span> Low
+            </div>
+            <div id="accounts-map" class="accounts-map"></div>
+        </div>
+    </div>
+
+    <div class="error-banner" id="error-banner" style="display:none" role="alert"></div>
+
+    <script type="module" src="accounts.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<template>
+    <div class="slds-form-element">
+        <template if:true={label}>
+            <label class="slds-form-element__label">{label}</label>
+        </template>
+        <div class="slds-form-element__control">
+            <textarea
+                class="slds-textarea"
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+                oninput={handleInput}
+                onchange={handleChange}
+            >{value}</textarea>
+        </div>
+    </div>
+</template>

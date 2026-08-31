@@ -1,0 +1,274 @@
+<apex:page controller="ClmPdfViewerController" showHeader="false" sidebar="false" standardStylesheets="false" docType="html-5.0" applyHtmlTag="true" applyBodyTag="true">
+    <style>
+        html, body, #frame {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+        #status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-family: sans-serif;
+            color: #444;
+            background: #1a1a1a;
+            color: #fff;
+        }
+    </style>
+    <div id="status">Loading HTML presentation...</div>
+    <iframe id="frame" title="CLM HTML" style="display:none;"></iframe>
+    <script src="{!URLFOR($Resource.jszip)}"></script>
+    <script>
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var docId = params.get('docId');
+            var currentEntry = params.get('entry') || 'index.html';
+            var statusEl = document.getElementById('status');
+            var frameEl = document.getElementById('frame');
+            var LOAD_TIMEOUT_MS = 180000;
+            var blobByPath = {};
+            var textByPath = {};
+            var objectUrls = [];
+            var packageReady = false;
+
+            function notifyParent(type, detail) {
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage(Object.assign({ type: type }, detail || {}), '*');
+                    }
+                } catch (ignore) {
+                    /* ignore */
+                }
+            }
+
+            function showError(message) {
+                statusEl.style.display = 'flex';
+                statusEl.textContent = message;
+                frameEl.style.display = 'none';
+                notifyParent('clm-html-error', { message: message });
+            }
+
+            function showStatus(message) {
+                statusEl.style.display = 'flex';
+                statusEl.textContent = message;
+                frameEl.style.display = 'none';
+            }
+
+            function withTimeout(promise, message) {
+                return new Promise(function (resolve, reject) {
+                    var timer = window.setTimeout(function () {
+                        reject(new Error(message));
+                    }, LOAD_TIMEOUT_MS);
+                    promise.then(
+                        function (value) {
+                            window.clearTimeout(timer);
+                            resolve(value);
+                        },
+                        function (reason) {
+                            window.clearTimeout(timer);
+                            reject(reason);
+                        }
+                    );
+                });
+            }
+
+            function normalizePath(path) {
+                return String(path || '')
+                    .replace(/\\/g, '/')
+                    .replace(/^\.\//, '')
+                    .replace(/^\/+/, '');
+            }
+
+            function guessMime(path) {
+                var lower = String(path || '').toLowerCase();
+                if (lower.indexOf('.html', lower.length - 5) !== -1 || lower.indexOf('.htm', lower.length - 4) !== -1) return 'text/html';
+                if (lower.indexOf('.js', lower.length - 3) !== -1) return 'application/javascript';
+                if (lower.indexOf('.css', lower.length - 4) !== -1) return 'text/css';
+                if (lower.indexOf('.png', lower.length - 4) !== -1) return 'image/png';
+                if (lower.indexOf('.jpg', lower.length - 4) !== -1 || lower.indexOf('.jpeg', lower.length - 5) !== -1) return 'image/jpeg';
+                if (lower.indexOf('.gif', lower.length - 4) !== -1) return 'image/gif';
+                if (lower.indexOf('.svg', lower.length - 4) !== -1) return 'image/svg+xml';
+                if (lower.indexOf('.webp', lower.length - 5) !== -1) return 'image/webp';
+                if (lower.indexOf('.mp4', lower.length - 4) !== -1) return 'video/mp4';
+                if (lower.indexOf('.woff2', lower.length - 6) !== -1) return 'font/woff2';
+                if (lower.indexOf('.woff', lower.length - 5) !== -1) return 'font/woff';
+                if (lower.indexOf('.ttf', lower.length - 4) !== -1) return 'font/ttf';
+                if (lower.indexOf('.json', lower.length - 5) !== -1) return 'application/json';
+                return 'application/octet-stream';
+            }
+
+            function resolveRelative(basePath, relativePath) {
+                var baseParts = normalizePath(basePath).split('/');
+                baseParts.pop();
+                var relParts = normalizePath(relativePath).split('/');
+                for (var i = 0; i < relParts.length; i += 1) {
+                    var part = relParts[i];
+                    if (!part || part === '.') continue;
+                    if (part === '..') baseParts.pop();
+                    else baseParts.push(part);
+                }
+                return baseParts.join('/');
+            }
+
+            function rewriteHtml(htmlText, entryPath) {
+                return htmlText
+                    .replace(/(\s(?:src|href))=(["'])([^"']+)\2/gi, function (match, attr, quote, ref) {
+                        if (!ref || /^(https?:|data:|blob:|\/\/|#|mailto:)/i.test(ref)) return match;
+                        var resolved = resolveRelative(entryPath, ref);
+                        return blobByPath[resolved] ? attr + '=' + quote + blobByPath[resolved] + quote : match;
+                    })
+                    .replace(/url\((['"]?)([^'")]+)\1\)/gi, function (match, quote, ref) {
+                        if (!ref || /^(https?:|data:|blob:|\/\/)/i.test(ref)) return match;
+                        var resolved = resolveRelative(entryPath, ref);
+                        return blobByPath[resolved] ? 'url(' + (quote || '') + blobByPath[resolved] + (quote || '') + ')' : match;
+                    });
+            }
+
+            function fetchZipBytes() {
+                var downloadUrl = '/sfc/servlet.shepherd/document/download/' + encodeURIComponent(docId);
+                return withTimeout(
+                    fetch(downloadUrl, { credentials: 'same-origin' }).then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Unable to load presentation (HTTP ' + response.status + ').');
+                        }
+                        return response.arrayBuffer();
+                    }),
+                    'Timed out loading presentation file.'
+                );
+            }
+
+            function loadWithRemoting() {
+                if (!window.Visualforce || !window.Visualforce.remoting || !window.Visualforce.remoting.Manager) {
+                    return Promise.reject(new Error('Unable to load presentation.'));
+                }
+                return new Promise(function (resolve, reject) {
+                    window.Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.ClmPdfViewerController.getPdfBase64}',
+                        docId,
+                        function (result, event) {
+                            if (!event.status) {
+                                reject(new Error(event.message || 'Unable to load presentation.'));
+                                return;
+                            }
+                            try {
+                                var raw = window.atob(result);
+                                var bytes = new Uint8Array(raw.length);
+                                for (var i = 0; i < raw.length; i += 1) {
+                                    bytes[i] = raw.charCodeAt(i);
+                                }
+                                resolve(bytes.buffer);
+                            } catch (e) {
+                                reject(new Error('Unable to load presentation.'));
+                            }
+                        },
+                        { escape: false, buffer: false, timeout: LOAD_TIMEOUT_MS }
+                    );
+                });
+            }
+
+            function showEntry(entry) {
+                var normalized = normalizePath(entry);
+                var htmlText = textByPath[normalized];
+                if (!htmlText) {
+                    var keys = Object.keys(textByPath);
+                    var match = null;
+                    for (var i = 0; i < keys.length; i += 1) {
+                        var key = keys[i];
+                        if (key.toLowerCase() === normalized.toLowerCase() || key.toLowerCase().indexOf('/' + normalized.toLowerCase()) === key.length - normalized.length - 1) {
+                            match = key;
+                            break;
+                        }
+                    }
+                    if (!match) {
+                        showError('HTML entry not found in package: ' + entry);
+                        return;
+                    }
+                    normalized = match;
+                    htmlText = textByPath[match];
+                }
+                var rewritten = rewriteHtml(htmlText, normalized);
+                var blobUrl = URL.createObjectURL(new Blob([rewritten], { type: 'text/html' }));
+                objectUrls.push(blobUrl);
+                frameEl.src = blobUrl;
+                frameEl.style.display = 'block';
+                statusEl.style.display = 'none';
+                notifyParent('clm-html-ready', { entry: normalized });
+            }
+
+            function unpack(bytes) {
+                if (!window.JSZip) {
+                    throw new Error('HTML unzip library is unavailable.');
+                }
+                return window.JSZip.loadAsync(bytes).then(function (zip) {
+                    var names = Object.keys(zip.files).filter(function (name) {
+                        return !zip.files[name].dir;
+                    });
+                    var chain = Promise.resolve();
+                    names.forEach(function (name) {
+                        chain = chain.then(function () {
+                            var normalized = normalizePath(name);
+                            if (!normalized || normalized.indexOf('__MACOSX') !== -1 || normalized.split('/').pop().charAt(0) === '.') {
+                                return;
+                            }
+                            var lower = normalized.toLowerCase();
+                            var isText = /\.(html?|css|js|svg)$/i.test(lower);
+                            if (isText) {
+                                return zip.file(name).async('string').then(function (text) {
+                                    textByPath[normalized] = text;
+                                    var url = URL.createObjectURL(new Blob([text], { type: guessMime(normalized) }));
+                                    blobByPath[normalized] = url;
+                                    objectUrls.push(url);
+                                });
+                            }
+                            return zip.file(name).async('uint8array').then(function (data) {
+                                var url = URL.createObjectURL(new Blob([data], { type: guessMime(normalized) }));
+                                blobByPath[normalized] = url;
+                                objectUrls.push(url);
+                            });
+                        });
+                    });
+                    return chain;
+                });
+            }
+
+            if (!docId) {
+                showError('Missing document.');
+                return;
+            }
+
+            showStatus('Downloading HTML presentation...');
+            // Shepherd download redirects to file.force.com and is blocked by CORS from VF.
+            // Load bytes via Apex remoting (same origin) instead.
+            loadWithRemoting()
+                .then(function (bytes) {
+                    showStatus('Unpacking slides...');
+                    return unpack(bytes);
+                })
+                .then(function () {
+                    packageReady = true;
+                    showEntry(currentEntry);
+                })
+                .catch(function (error) {
+                    showError((error && error.message) ? error.message : 'Unable to load HTML presentation.');
+                    notifyParent('clm-html-error', {
+                        message: (error && error.message) ? error.message : 'Unable to load HTML presentation.'
+                    });
+                });
+
+            window.addEventListener('message', function (event) {
+                if (!event.data || event.data.type !== 'clm-html-entry') {
+                    return;
+                }
+                currentEntry = event.data.entry || currentEntry;
+                if (packageReady) {
+                    showEntry(currentEntry);
+                }
+            });
+        })();
+    </script>
+</apex:page>

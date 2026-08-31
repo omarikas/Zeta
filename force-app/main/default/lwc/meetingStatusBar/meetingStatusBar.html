@@ -1,0 +1,128 @@
+<template>
+    <lightning-card title="Meeting workflow" icon-name="standard:path">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template lwc:if={busy}>
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </template>
+
+            <template lwc:if={errorMessage}>
+                <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+            </template>
+
+            <template lwc:if={hasPath}>
+                <div class="slds-path slds-m-bottom_medium">
+                    <div class="slds-grid slds-path__track">
+                        <div class="slds-grid slds-path__scroller-container">
+                            <div class="slds-path__scroller">
+                                <div class="slds-path__scroller_inner">
+                                    <ul class="slds-path__nav" role="listbox">
+                                        <template for:each={pathSteps} for:item="step">
+                                            <li
+                                                key={step.value}
+                                                class={step.itemClass}
+                                                role="presentation"
+                                            >
+                                                <a
+                                                    aria-selected={step.isCurrent}
+                                                    class="slds-path__link"
+                                                    href="javascript:void(0);"
+                                                    role="option"
+                                                    tabindex="-1"
+                                                    title={step.label}
+                                                >
+                                                    <span class="slds-path__stage">
+                                                        <lightning-icon
+                                                            lwc:if={step.isComplete}
+                                                            icon-name="utility:check"
+                                                            size="xx-small"
+                                                            alternative-text="Complete"
+                                                        ></lightning-icon>
+                                                        <span class="slds-assistive-text">{step.assistiveText}</span>
+                                                    </span>
+                                                    <span class="slds-path__title">{step.label}</span>
+                                                </a>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template lwc:else>
+                <div class="slds-m-bottom_small">
+                    <div class="slds-text-title_caps">Status</div>
+                    <div class="slds-text-heading_small">{statusLabel}</div>
+                </div>
+            </template>
+
+            <div class="slds-grid slds-wrap slds-gutters_small slds-m-bottom_small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <div class="slds-text-title_caps">Your roles</div>
+                    <div class="slds-text-body_regular">{rolesLabel}</div>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                    <div class="slds-text-title_caps">Header edit</div>
+                    <div class="slds-text-body_regular">
+                        <template lwc:if={canEditMeeting}>Allowed</template>
+                        <template lwc:else>Read-only</template>
+                    </div>
+                </div>
+            </div>
+
+            <template lwc:if={workflowMessage}>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">{workflowMessage}</p>
+            </template>
+
+            <template lwc:if={hasActions}>
+                <div class="slds-button-group">
+                    <template for:each={actions} for:item="action">
+                        <lightning-button
+                            key={action.actionKey}
+                            class="slds-m-right_x-small slds-m-bottom_x-small"
+                            label={action.label}
+                            data-action-key={action.actionKey}
+                            onclick={handleActionClick}
+                            disabled={busy}
+                            variant={action.buttonVariant}
+                        ></lightning-button>
+                    </template>
+                </div>
+            </template>
+            <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak">
+                    No workflow actions available for your role in this status.
+                </p>
+            </template>
+        </div>
+    </lightning-card>
+
+    <template lwc:if={showReasonModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Reason required</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-textarea
+                        label="Reason"
+                        value={reason}
+                        onchange={handleReasonChange}
+                        required
+                    ></lightning-textarea>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={handleReasonCancel}></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_x-small"
+                        label="Confirm"
+                        variant="brand"
+                        onclick={handleReasonConfirm}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

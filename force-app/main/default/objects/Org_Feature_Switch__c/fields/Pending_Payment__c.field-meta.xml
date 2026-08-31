@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Pending_Payment__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>When checked, shows a pending-payment warning modal across Lightning apps, Visualforce pages, and the login right-frame.</description>
+    <label>Pending Payment</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

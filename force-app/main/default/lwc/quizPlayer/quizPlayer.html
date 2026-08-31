@@ -1,0 +1,117 @@
+<template>
+    <div class="quiz-player">
+        <template if:true={loading}>
+            <div class="loading-wrap">
+                <lightning-spinner alternative-text="Loading quiz" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:true={quiz}>
+            <template if:true={blockedMessage}>
+                <div class="result-panel">
+                    <h3 class="result-title">Exam unavailable</h3>
+                    <p>{blockedMessage}</p>
+                </div>
+            </template>
+
+            <template if:true={showLobby}>
+                <section class="lobby">
+                    <div class="lobby-badge">Exam</div>
+                    <h2 class="lobby-title">{quiz.title}</h2>
+                    <p class="lobby-attempt">{nextAttemptLabel}</p>
+
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Attempts left</span>
+                            <span class="stat-value">{attemptSummary}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Time limit</span>
+                            <span class="stat-value">{timeLimitLabel}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Passing score</span>
+                            <span class="stat-value">{passingLabel}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Questions</span>
+                            <span class="stat-value">{questionCount}</span>
+                        </div>
+                    </div>
+
+                    <ul class="lobby-notes">
+                        <li>The countdown starts when you click Start Quiz.</li>
+                        <li>Answer all questions, then submit before time runs out.</li>
+                        <li>If time expires, your answers are submitted automatically.</li>
+                    </ul>
+
+                    <lightning-button
+                        variant="brand"
+                        label="Start Quiz"
+                        onclick={handleStartExam}
+                        class="start-btn"
+                    ></lightning-button>
+                </section>
+            </template>
+
+            <template if:true={showForm}>
+                <div class="exam-toolbar">
+                    <div class="toolbar-left">
+                        <span class="toolbar-title">{quiz.title}</span>
+                        <span class="toolbar-meta">{nextAttemptLabel} � {progressLabel}</span>
+                    </div>
+                    <div class={timerClass} title="Time remaining">
+                        <lightning-icon icon-name="utility:clock" size="x-small"></lightning-icon>
+                        <span class="timer-text">{timerDisplay}</span>
+                    </div>
+                </div>
+
+                <template for:each={questionsView} for:item="question">
+                    <article key={question.id} class="question-card">
+                        <h4>Q{question.number}. {question.question}</h4>
+                        <template if:true={question.isSingle}>
+                            <lightning-radio-group
+                                name={question.id}
+                                data-id={question.id}
+                                options={question.options}
+                                value={question.selectedValue}
+                                onchange={handleAnswer}
+                                type="radio"
+                            ></lightning-radio-group>
+                        </template>
+                    </article>
+                </template>
+
+                <div class="submit-bar">
+                    <span class="submit-hint">{progressLabel}</span>
+                    <lightning-button
+                        variant="brand"
+                        label="Submit exam"
+                        disabled={submitDisabled}
+                        onclick={handleSubmit}
+                    ></lightning-button>
+                </div>
+            </template>
+
+            <template if:true={result}>
+                <div class="result-panel">
+                    <h3 class="result-title">Exam submitted</h3>
+                    <p class="score">Score: {result.score}%</p>
+                    <template if:true={result.passed}>
+                        <p class="result-ok">You passed this exam.</p>
+                    </template>
+                    <template if:false={result.passed}>
+                        <p class="result-fail">
+                            You did not reach the passing score. You can retry if attempts remain.
+                        </p>
+                        <lightning-button
+                            class="slds-m-top_small"
+                            label="Back to start"
+                            onclick={handleRetry}
+                        ></lightning-button>
+                    </template>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Rejection_Reason_Required_When_Rejected</fullName>
+    <active>true</active>
+    <description>When Stage is Rejected, Rejection Reason must be provided.</description>
+    <errorConditionFormula>AND(
+  ISPICKVAL(Stage__c, &quot;Rejected&quot;),
+  ISBLANK(Rejection_Reason__c)
+)</errorConditionFormula>
+    <errorDisplayField>Rejection_Reason__c</errorDisplayField>
+    <errorMessage>Enter a rejection reason before saving a record in Rejected status.</errorMessage>
+</ValidationRule>

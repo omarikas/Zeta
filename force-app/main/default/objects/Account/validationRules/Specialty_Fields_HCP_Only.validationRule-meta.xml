@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Specialty_Fields_HCP_Only</fullName>
+    <active>true</active>
+    <description>Medical specialty fields are only valid on Medical Professional (HCP) person accounts.</description>
+    <errorConditionFormula>AND(
+  NOT(
+    OR(
+      RecordType.DeveloperName = &quot;PersonAccount&quot;,
+      RecordType.DeveloperName = &quot;SDO_PersonAccounts&quot;,
+      RecordType.DeveloperName = &quot;Medical_Professional_HCP&quot;
+    )
+  ),
+  OR(
+    NOT(ISBLANK(TEXT(Specialty_1__c))),
+    NOT(ISBLANK(TEXT(Specialty_2__c))),
+    NOT(ISBLANK(TEXT(Specialty_3__c))),
+    NOT(ISBLANK(TEXT(Specialty_4__c)))
+  )
+)</errorConditionFormula>
+    <errorMessage>Specialty fields can only be set on Medical Professional (HCP) accounts.</errorMessage>
+</ValidationRule>

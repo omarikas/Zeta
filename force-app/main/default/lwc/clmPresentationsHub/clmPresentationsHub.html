@@ -1,0 +1,66 @@
+<template>
+    <section class="clm-presentations-hub">
+        <header class="hub-header">
+            <lightning-icon icon-name="utility:screen" size="small"></lightning-icon>
+            <div>
+                <h1>CLM Presentations</h1>
+                <p>Select a presentation to present immediately.</p>
+            </div>
+            <lightning-button
+                label="Refresh"
+                icon-name="utility:refresh"
+                onclick={loadPresentations}
+                disabled={isLoading}
+            ></lightning-button>
+        </header>
+
+        <template if:true={showPlayer}>
+            <c-clm-player
+                ad-hoc
+                presentation-id={activePresentationId}
+                presentation-name={activePresentationName}
+                onclose={handlePlayerClose}
+            ></c-clm-player>
+        </template>
+
+        <template if:false={showPlayer}>
+            <article class="panel">
+                <h2 class="panel-title">Available Presentations</h2>
+                <template if:true={offlineHint}>
+                    <p class="offline-hint">{offlineHint}</p>
+                </template>
+                <template if:true={hasPresentations}>
+                    <div class="card-grid">
+                        <template for:each={presentationCards} for:item="pres">
+                            <article key={pres.key} class="pres-card">
+                                <h3>{pres.name}</h3>
+                                <p class="meta">{pres.formatType} · {pres.slideCountLabel}</p>
+                                <p class="meta product-meta-row">
+                                    <c-product-thumbnail
+                                        image-url={pres.imageUrl}
+                                        product-name={pres.productName}
+                                        size="sm"
+                                    ></c-product-thumbnail>
+                                    <span>Product: {pres.productName}</span>
+                                </p>
+                                <lightning-button
+                                    label="Present"
+                                    variant="brand"
+                                    data-id={pres.id}
+                                    data-name={pres.name}
+                                    onclick={handlePresent}
+                                ></lightning-button>
+                            </article>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasPresentations}>
+                    <p class="empty">
+                        <template if:true={isLoading}>Loading presentations…</template>
+                        <template if:false={isLoading}>No presentations are available.</template>
+                    </p>
+                </template>
+            </article>
+        </template>
+    </section>
+</template>

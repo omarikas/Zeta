@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Audience_Scope__c</fullName>
+    <label>Audience Scope</label>
+    <required>true</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>All Business Units</fullName>
+                <default>true</default>
+                <label>All Business Units</label>
+            </value>
+            <value>
+                <fullName>Business Unit</fullName>
+                <default>false</default>
+                <label>Business Unit</label>
+            </value>
+            <value>
+                <fullName>Line</fullName>
+                <default>false</default>
+                <label>Line</label>
+            </value>
+            <value>
+                <fullName>District</fullName>
+                <default>false</default>
+                <label>District</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

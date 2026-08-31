@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathAssistant xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <entityName>Pharma_Project__c</entityName>
+    <fieldName>Status__c</fieldName>
+    <masterLabel>Pharma Project</masterLabel>
+    <pathAssistantSteps>
+        <info>&lt;p&gt;Project is &lt;strong&gt;completed&lt;/strong&gt;. Review final budget utilization and KPI attainment.&lt;/p&gt;</info>
+        <picklistValueName>Completed</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Project_Lead__c</fieldNames>
+        <info>&lt;p&gt;Project is &lt;strong&gt;in progress&lt;/strong&gt;. Track activities, visits, meetings, and goal completion on related lists.&lt;/p&gt;</info>
+        <picklistValueName>In Progress</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <info>&lt;p&gt;Project is &lt;strong&gt;on hold&lt;/strong&gt;.&lt;/p&gt;</info>
+        <picklistValueName>On Hold</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Project_Lead__c</fieldNames>
+        <fieldNames>Start_Date__c</fieldNames>
+        <fieldNames>End_Date__c</fieldNames>
+        <fieldNames>Total_Budget__c</fieldNames>
+        <info>&lt;p&gt;Define the project plan: assign a &lt;strong&gt;project lead&lt;/strong&gt;, set dates and budget, add team members and brand budget lines.&lt;/p&gt;</info>
+        <picklistValueName>Planning</picklistValueName>
+    </pathAssistantSteps>
+    <recordTypeName>__MASTER__</recordTypeName>
+</PathAssistant>

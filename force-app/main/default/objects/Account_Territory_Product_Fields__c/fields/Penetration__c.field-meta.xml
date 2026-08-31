@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Penetration__c</fullName>
+    <description>Number of prescriptions the HCP writes in the business-agreed periodicity for Zeta products.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Rx volume in the agreed periodicity for Zeta products.</inlineHelpText>
+    <label>Penetration</label>
+    <precision>12</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

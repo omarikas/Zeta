@@ -1,0 +1,370 @@
+<template>
+    <div class="accounts-shell">
+        <header class="accounts-header">
+            <h2 class="accounts-title">Accounts</h2>
+            <div class="accounts-header-status">
+                <template if:true={showSyncChip}>
+                    <span class={syncChipClass} aria-live="polite">{syncChipLabel}</span>
+                </template>
+            </div>
+        </header>
+
+        <div class={toolbarClass}>
+            <input
+                class="accounts-search"
+                type="search"
+                aria-label="Search accounts"
+                placeholder="Search by name, specialty, city..."
+                value={searchTerm}
+                onchange={handleSearchChange}
+                onkeyup={handleSearchKeyUp}
+            />
+
+            <template if:false={isCompactView}>
+                <select class="toolbar-filter" aria-label="Plan cycle" onchange={handleScopeChange}>
+                    <template for:each={scopeOptionList} for:item="opt">
+                        <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                    </template>
+                </select>
+
+                <select class="toolbar-filter" aria-label="Record type" onchange={handleRecordTypeChange}>
+                    <template for:each={recordTypeOptionList} for:item="opt">
+                        <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                    </template>
+                </select>
+
+                <select class="toolbar-filter" aria-label="Classification" onchange={handleClassificationChange}>
+                    <template for:each={classificationOptionList} for:item="opt">
+                        <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                    </template>
+                </select>
+
+                <select class="toolbar-filter" aria-label="Sort by" onchange={handleSortChange}>
+                    <template for:each={sortOptionList} for:item="opt">
+                        <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                    </template>
+                </select>
+            </template>
+
+            <div class="toolbar-actions">
+                <template if:true={isCompactView}>
+                    <button type="button" class="toolbar-btn" title="Show filters" onclick={handleToggleFilters}>Filters</button>
+                </template>
+                <button type="button" class="toolbar-btn" title="Refresh" onclick={handleRefresh}>Refresh</button>
+                <div class="view-toggle-group" role="group" aria-label="View">
+                    <button type="button" class={listViewToggleClass} onclick={handleShowList}>List View</button>
+                    <button type="button" class={mapViewToggleClass} onclick={handleShowMap}>Map View</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="account-collections">
+            <div class="collections-section-title">My lists</div>
+            <div class="collection-chips-row">
+                <button type="button" class={allAccountsChipClass} onclick={handleShowAllAccounts}>
+                    All accounts
+                </button>
+                <template for:each={collectionChips} for:item="col">
+                    <button
+                        key={col.id}
+                        type="button"
+                        class={col.chipClass}
+                        data-collection-id={col.id}
+                        onclick={handleSelectCollection}
+                        title={col.title}
+                    >
+                        {col.label}
+                    </button>
+                </template>
+                <template if:false={hasPlannerCollections}>
+                    <span class="collections-empty-hint">Create lists in Field Rep Planner</span>
+                </template>
+            </div>
+        </div>
+
+        <div class={summaryCardsClass}>
+            <article class="summary-card">
+                <span class="summary-value">{summary.totalCount}</span>
+                <span class="summary-label">Total Accounts</span>
+            </article>
+            <article class="summary-card">
+                <span class="summary-value">{summary.inPlanCount}</span>
+                <span class="summary-label">In Plan Cycle</span>
+            </article>
+            <article class="summary-card">
+                <span class="summary-value">{summary.outPlanCount}</span>
+                <span class="summary-label">Out of Plan Cycle</span>
+            </article>
+            <article class="summary-card summary-card-warn">
+                <span class="summary-value">{summary.behindPaceCount}</span>
+                <span class="summary-label">Behind / Critical Pace</span>
+            </article>
+        </div>
+
+        <p class="list-meta">{countLabel} · {summary.monthLabel}</p>
+
+        <template if:true={showErrorBanner}>
+            <div class="error-banner" role="alert">{errorMessage}</div>
+        </template>
+
+        <template if:true={isListView}>
+            <template if:true={isCompactView}>
+                <div class="oce-shell">
+                    <aside class={sidebarClass}>
+                        <div class="oce-sidebar-inner">
+                            <div class="oce-segment" role="tablist">
+                                <button
+                                    class={listsSegmentClass}
+                                    role="tab"
+                                    aria-selected={isListsPanel}
+                                    onclick={handleShowListsPanel}
+                                >Lists</button>
+                                <button
+                                    class={filtersSegmentClass}
+                                    role="tab"
+                                    aria-selected={isFiltersPanel}
+                                    onclick={handleShowFiltersPanel}
+                                >Filters</button>
+                            </div>
+
+                            <template if:true={isListsPanel}>
+                                <p class="oce-sidebar-heading">Lists</p>
+                                <div class="oce-sidebar-collections">
+                                    <p class="oce-sidebar-subheading">My lists</p>
+                                    <div class="collection-chips-row">
+                                        <button type="button" class={allAccountsChipClass} onclick={handleShowAllAccounts}>
+                                            All accounts
+                                        </button>
+                                        <template for:each={collectionChips} for:item="col">
+                                            <button
+                                                key={col.id}
+                                                type="button"
+                                                class={col.chipClass}
+                                                data-collection-id={col.id}
+                                                onclick={handleSelectCollection}
+                                                title={col.title}
+                                            >
+                                                {col.label}
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                                <p class="oce-sidebar-heading oce-sidebar-heading-spaced">Plan cycle</p>
+                                <ul class="oce-nav-list" role="list">
+                                    <template for:each={listNavItems} for:item="item">
+                                        <li key={item.value} class="oce-nav-item">
+                                            <button
+                                                class={item.buttonClass}
+                                                data-value={item.value}
+                                                onclick={handleListNavSelect}
+                                            >{item.label}</button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+
+                            <template if:true={isFiltersPanel}>
+                                <p class="oce-sidebar-heading">Filters</p>
+                                <div class="oce-filter-field">
+                                    <label class="oce-filter-label">Plan cycle</label>
+                                    <select class="oce-filter-select" aria-label="Plan cycle" onchange={handleScopeChange}>
+                                        <template for:each={scopeOptionList} for:item="opt">
+                                            <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="oce-filter-field">
+                                    <label class="oce-filter-label">Record Type</label>
+                                    <select class="oce-filter-select" aria-label="Record Type" onchange={handleRecordTypeChange}>
+                                        <template for:each={recordTypeOptionList} for:item="opt">
+                                            <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="oce-filter-field">
+                                    <label class="oce-filter-label">Classification</label>
+                                    <select class="oce-filter-select" aria-label="Classification" onchange={handleClassificationChange}>
+                                        <template for:each={classificationOptionList} for:item="opt">
+                                            <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="oce-filter-field">
+                                    <label class="oce-filter-label">Sort by</label>
+                                    <select class="oce-filter-select" aria-label="Sort by" onchange={handleSortChange}>
+                                        <template for:each={sortOptionList} for:item="opt">
+                                            <option key={opt.value} value={opt.value} selected={opt.isSelected}>{opt.label}</option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <p class="oce-sidebar-heading oce-sidebar-heading-spaced">Type</p>
+                                <ul class="oce-nav-list" role="list">
+                                    <template for:each={typeNavItems} for:item="item">
+                                        <li key={item.value} class="oce-nav-item">
+                                            <button
+                                                class={item.buttonClass}
+                                                data-value={item.value}
+                                                onclick={handleTypeNavSelect}
+                                            >{item.label}</button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </div>
+                    </aside>
+
+                    <section class="oce-main">
+                        <c-accounts-tab-oce-list
+                            rows={rows}
+                            is-loading={isLoading}
+                            sort-by={sortBy}
+                            sort-direction={sortDirection}
+                            onrowaction={handleOceRowAction}
+                            onsorttoggle={handleOceSortToggle}
+                        ></c-accounts-tab-oce-list>
+                        <template if:true={showEmptyState}>
+                            <p class="accounts-empty-state">No accounts match the current filters.</p>
+                        </template>
+                        <template if:true={showPagination}>
+                            <div class="pagination-bar">
+                                <span class="pagination-range">{rangeLabel}</span>
+                                <div class="pagination-controls">
+                                    <button
+                                        type="button"
+                                        class="page-btn"
+                                        onclick={handlePreviousPage}
+                                        disabled={isPrevDisabled}
+                                    >Previous</button>
+                                    <span class="page-label">{pageLabel}</span>
+                                    <button
+                                        type="button"
+                                        class="page-btn"
+                                        onclick={handleNextPage}
+                                        disabled={isNextDisabled}
+                                    >Next</button>
+                                </div>
+                            </div>
+                        </template>
+                    </section>
+                </div>
+            </template>
+
+            <template if:false={isCompactView}>
+                <div class="accounts-list-wrap">
+                    <c-accounts-tab-oce-list
+                        rows={rows}
+                        is-loading={isLoading}
+                        sort-by={sortBy}
+                        sort-direction={sortDirection}
+                        onrowaction={handleOceRowAction}
+                        onsorttoggle={handleOceSortToggle}
+                    ></c-accounts-tab-oce-list>
+                    <template if:true={showEmptyState}>
+                        <p class="accounts-empty-state">No accounts match the current filters.</p>
+                    </template>
+                    <template if:true={showPagination}>
+                        <div class="pagination-bar">
+                            <span class="pagination-range">{rangeLabel}</span>
+                            <div class="pagination-controls">
+                                <button
+                                    type="button"
+                                    class="page-btn"
+                                    onclick={handlePreviousPage}
+                                    disabled={isPrevDisabled}
+                                >Previous</button>
+                                <span class="page-label">{pageLabel}</span>
+                                <button
+                                    type="button"
+                                    class="page-btn"
+                                    onclick={handleNextPage}
+                                    disabled={isNextDisabled}
+                                >Next</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </template>
+
+        <template if:true={isMapView}>
+            <div class="map-view-layout">
+                <aside class="map-account-list">
+                    <div class="map-list-header">
+                        <span class="map-list-title">Accounts</span>
+                        <span class="map-list-count">{mapListCountLabel}</span>
+                    </div>
+                    <template if:true={isLoading}>
+                        <p class="map-list-loading">Loading accounts…</p>
+                    </template>
+                    <template if:false={isLoading}>
+                        <template if:true={hasMapListItems}>
+                            <ul class="map-account-items" role="list">
+                                <template for:each={mapListItems} for:item="item">
+                                    <li
+                                        key={item.accountId}
+                                        class={item.itemClass}
+                                        data-account-id={item.accountId}
+                                        onclick={handleMapListSelect}
+                                    >
+                                        <div class="map-account-item-body">
+                                            <div class="map-account-item-top">
+                                                <span class={item.riskDotClass} title={item.agentforceRisk}></span>
+                                                <span class="map-account-type">{item.typeLabel}</span>
+                                                <span class="map-account-badge">{item.classification}</span>
+                                            </div>
+                                            <p class="map-account-name">{item.accountName}</p>
+                                            <p class="map-account-subtitle">{item.subtitle}</p>
+                                            <template if:true={item.hasBusinessUnits}>
+                                                <p class="map-account-bu">{item.businessUnitLabel}</p>
+                                            </template>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="map-new-window-btn"
+                                            aria-label="View account"
+                                            title="View account"
+                                            data-account-id={item.accountId}
+                                            onclick={handleMapListViewAccount}
+                                        >↗</button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+                        <template if:false={hasMapListItems}>
+                            <p class="map-list-empty">No accounts match the current filters.</p>
+                        </template>
+                        <template if:true={showMapPagination}>
+                            <div class="map-pagination-bar">
+                                <span class="pagination-range">{mapRangeLabel}</span>
+                                <div class="pagination-controls">
+                                    <button
+                                        type="button"
+                                        class="page-btn"
+                                        onclick={handleMapPreviousPage}
+                                        disabled={isMapPrevDisabled}
+                                    >Previous</button>
+                                    <span class="page-label">{mapPageLabel}</span>
+                                    <button
+                                        type="button"
+                                        class="page-btn"
+                                        onclick={handleMapNextPage}
+                                        disabled={isMapNextDisabled}
+                                    >Next</button>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </aside>
+                <section class="map-panel">
+                    <div class="map-legend">
+                        <span class="legend-item"><span class="legend-pin legend-pin-high"></span> High risk</span>
+                        <span class="legend-item"><span class="legend-pin legend-pin-med"></span> Med risk</span>
+                        <span class="legend-item"><span class="legend-pin legend-pin-low"></span> Low risk</span>
+                    </div>
+                    <div class="accounts-map" lwc:dom="manual"></div>
+                </section>
+            </div>
+        </template>
+    </div>
+</template>

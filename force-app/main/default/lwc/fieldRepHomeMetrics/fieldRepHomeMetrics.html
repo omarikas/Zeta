@@ -1,0 +1,377 @@
+<template>
+    <article class="perf-card">
+        <header class="perf-header">
+            <div class="perf-header-top">
+                <div>
+                    <h2 class="perf-title">Your Performance</h2>
+                    <p class="perf-subtitle">Month-to-date coverage and call frequency</p>
+                </div>
+                <div class="perf-header-status">
+                    <template if:true={showSyncChip}>
+                        <span class={syncChipClass} aria-live="polite">{syncChipLabel}</span>
+                    </template>
+                    <template if:true={showStreakBanner}>
+                        <div class="streak-banner" aria-live="polite">
+                            <template if:true={showActivityStreak}>
+                                <span class="streak-pill streak-pill-activity">{activityStreakLabel}</span>
+                            </template>
+                            <template if:true={showCoverageStreak}>
+                                <span class="streak-pill streak-pill-coverage">{coverageStreakLabel}</span>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </header>
+
+        <div class="perf-body">
+            <template if:true={showErrorBanner}>
+                <div class="error-banner" role="alert">{errorMessage}</div>
+            </template>
+
+            <!-- Primary KPIs -->
+            <template if:true={metricsReady}>
+            <div class="kpi-row" role="list" aria-label="Performance KPI rings">
+                <template for:each={kpiCards} for:item="kpi">
+                    <div
+                        key={kpi.id}
+                        class={kpi.cardClass}
+                        style={kpi.cardStyle}
+                        role="listitem"
+                        aria-label={kpi.ariaLabel}
+                    >
+                        <div class="kpi-card-inner">
+                            <div class="kpi-card-meta">
+                                <span class={kpi.tierPillClass}>
+                                    <span class="kpi-tier-icon" aria-hidden="true">{kpi.tierIcon}</span>
+                                    <span class="kpi-tier-text">{kpi.tierLabel}</span>
+                                </span>
+                                <span class="kpi-label">{kpi.label}</span>
+                                <span class="kpi-tagline">{kpi.tagline}</span>
+                                <template if:true={kpi.showNextTier}>
+                                    <span class="kpi-next-tier">{kpi.nextTierLabel}</span>
+                                </template>
+                                <span class="kpi-hint">{kpi.hint}</span>
+                            </div>
+                            <div class="kpi-ring-wrap">
+                                <svg class="kpi-ring-svg" viewBox="0 0 64 64" aria-hidden="true">
+                                    <circle class="kpi-ring-bg" cx="32" cy="32" r="28"></circle>
+                                    <circle
+                                        class={kpi.ringFillClass}
+                                        cx="32"
+                                        cy="32"
+                                        r="28"
+                                        style={kpi.ringStyle}
+                                    ></circle>
+                                </svg>
+                                <span class="kpi-ring-value" aria-hidden="true">{kpi.percentDisplay}%</span>
+                                <template if:true={kpi.showMilestoneSparkle}>
+                                    <span class="kpi-sparkle" aria-hidden="true" title="Milestone reached">✨</span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            </template>
+
+            <!-- Competition / Leaderboard -->
+            <template if:true={showRankings}>
+                <section class="competition-section" aria-label="Performance rankings">
+                    <div class="competition-header">
+                        <h3 class="section-label">Competition</h3>
+                        <span class="competition-hint">Ranked by visit coverage</span>
+                    </div>
+
+                    <div class="rank-summary-row">
+                        <div class="rank-summary-card">
+                            <span class="rank-summary-label">My rank in BU</span>
+                            <span class="rank-summary-value">{buRankLabel}</span>
+                        </div>
+                        <div class="rank-summary-card">
+                            <span class="rank-summary-label">Company-wide</span>
+                            <span class="rank-summary-value">{companyRankLabel}</span>
+                        </div>
+                    </div>
+
+                    <template if:true={showCatchUpCard}>
+                        <div class="catch-up-card" aria-live="polite">
+                            <span class="catch-up-icon" aria-hidden="true">🏃</span>
+                            <p class="catch-up-message">{catchUpMessage}</p>
+                        </div>
+                    </template>
+
+                    <template if:true={showFirstPlaceCard}>
+                        <div class="first-place-card" aria-live="polite">
+                            <span class="first-place-icon" aria-hidden="true">🏆</span>
+                            <p class="first-place-message">{firstPlaceMessage}</p>
+                        </div>
+                    </template>
+
+                    <div class="leaderboard-panel">
+                        <div class="leaderboard-toolbar">
+                            <span class="leaderboard-title">Top 5 — {leaderboardScopeLabel}</span>
+                            <div class="scope-chips" role="tablist" aria-label="Leaderboard scope">
+                                <button
+                                    type="button"
+                                    class={buScopeChipClass}
+                                    data-scope="bu"
+                                    onclick={handleLeaderboardScope}
+                                    role="tab"
+                                    aria-selected={isBuScopeActive}
+                                >
+                                    BU
+                                </button>
+                                <button
+                                    type="button"
+                                    class={companyScopeChipClass}
+                                    data-scope="company"
+                                    onclick={handleLeaderboardScope}
+                                    role="tab"
+                                    aria-selected={isCompanyScopeActive}
+                                >
+                                    Company
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="leaderboard-list" role="list">
+                            <template for:each={leaderboardRows} for:item="row">
+                                <div key={row.userId} class={row.rowClass} role="listitem">
+                                    <span class="leaderboard-rank">{row.rankLabel}</span>
+                                    <span class="leaderboard-medal" aria-hidden="true">{row.badgeIcon}</span>
+                                    <span class="leaderboard-name">{row.name}</span>
+                                    <span class="leaderboard-coverage">{row.coverageDisplay}</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </section>
+            </template>
+
+            <!-- Achievements -->
+            <section class="achievements-section">
+                <div class="achievements-header">
+                    <h3 class="section-label">Achievements</h3>
+                    <span class="achievements-summary">{achievementSummary}</span>
+                </div>
+                <div class="achievements-row" role="list" aria-label="Performance badges">
+                    <template for:each={achievementBadges} for:item="badge">
+                        <button
+                            key={badge.id}
+                            type="button"
+                            class={badge.chipClass}
+                            role="listitem"
+                            title={badge.tooltip}
+                            data-badge-id={badge.id}
+                            onclick={handleBadgeClick}
+                            aria-label={badge.tooltip}
+                        >
+                            <span class="achievement-icon" aria-hidden="true">{badge.icon}</span>
+                            <span class="achievement-label">{badge.label}</span>
+                            <template if:false={badge.earned}>
+                                <span class="achievement-progress">{badge.progressLabel}</span>
+                            </template>
+                        </button>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Class breakdown -->
+            <section class="class-section">
+                <h3 class="section-label">By classification</h3>
+                <div class="class-row">
+                    <template for:each={byClassification} for:item="cls">
+                        <div key={cls.classification} class="class-card" style={cls.tileStyle}>
+                            <div class="class-card-header">
+                                <span class="class-badge">Class {cls.classification}</span>
+                                <span class="class-primary">{cls.visitCoveragePercentDisplay}%</span>
+                            </div>
+                            <div class="class-bar-track">
+                                <div class="class-bar-fill" style={cls.progressStyle}></div>
+                            </div>
+                            <div class="class-stats">
+                                <span class="class-stat">
+                                    <span class="class-stat-label">Customers</span>
+                                    <span class="class-stat-value">{cls.customerCoveragePercentDisplay}%</span>
+                                </span>
+                                <span class="class-stat">
+                                    <span class="class-stat-label">RF</span>
+                                    <span class="class-stat-value">{cls.rfPercentDisplay}%</span>
+                                </span>
+                                <span class="class-stat">
+                                    <span class="class-stat-label">LF</span>
+                                    <span class="class-stat-value">{cls.lfPercentDisplay}%</span>
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Account drill-down -->
+            <section class="accounts-section">
+                <div class="accounts-header">
+                    <div>
+                        <h3 class="section-label">Account drill-down</h3>
+                        <span class="account-count">{accountCountLabel}</span>
+                    </div>
+                    <div class="filter-chips" role="tablist" aria-label="Filter by class">
+                        <template for:each={filterChips} for:item="chip">
+                            <button
+                                key={chip.value}
+                                type="button"
+                                class={chip.chipClass}
+                                data-value={chip.value}
+                                onclick={handleFilter}
+                                role="tab"
+                                aria-selected={chip.isActive}
+                            >
+                                {chip.label}
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="accounts-toolbar">
+                    <div class="search-field">
+                        <input
+                            type="search"
+                            class="account-search-input"
+                            placeholder="Search name, specialty, LCF…"
+                            aria-label="Search accounts"
+                            oninput={scheduleSearch}
+                            onchange={commitSearch}
+                            autocomplete="off"
+                            autocorrect="off"
+                            spellcheck="false"
+                            enterkeyhint="search"
+                        />
+                        <template if:true={hasSearchTerm}>
+                            <button
+                                type="button"
+                                class="search-clear"
+                                onclick={clearSearch}
+                                aria-label="Clear search"
+                            >
+                                ×
+                            </button>
+                        </template>
+                    </div>
+                    <template if:true={isSearching}>
+                        <span class="search-hint">Searching…</span>
+                    </template>
+                </div>
+
+                <template if:true={hasAccountRows}>
+                    <div class="account-table">
+                        <div class="account-table-head">
+                            <template for:each={accountTableHeaders} for:item="header">
+                                <template if:true={header.sortable}>
+                                    <button
+                                        key={header.id}
+                                        type="button"
+                                        class={header.headerClass}
+                                        data-sort-field={header.sortField}
+                                        onclick={handleSort}
+                                        aria-sort={header.ariaSort}
+                                    >
+                                        <span>{header.label}</span>
+                                        <span class="sort-indicator" aria-hidden="true">{header.sortIndicator}</span>
+                                    </button>
+                                </template>
+                                <template if:false={header.sortable}>
+                                    <span key={header.id} class={header.headerClass}>{header.label}</span>
+                                </template>
+                            </template>
+                        </div>
+                        <template for:each={displayAccountRows} for:item="row">
+                            <div key={row.accountId} class="account-table-row">
+                                <div class="account-cell account-name-cell">
+                                    <button
+                                        type="button"
+                                        class="account-link"
+                                        data-account-id={row.accountId}
+                                        onclick={handleOpenAccount}
+                                    >
+                                        {row.accountName}
+                                    </button>
+                                    <template if:true={row.specialty}>
+                                        <span class="account-sub">{row.specialty}</span>
+                                    </template>
+                                </div>
+                                <div class="account-cell">
+                                    <span class="class-pill">{row.calculatedClassification}</span>
+                                </div>
+                                <div class="account-cell">
+                                    <span class="cell-value">{row.callPlanLabel}</span>
+                                    <div class="mini-bar-track">
+                                        <div class="mini-bar-fill" style={row.progressStyle}></div>
+                                    </div>
+                                </div>
+                                <div class="account-cell">
+                                    <span class="cell-value">{row.reachDisplay}</span>
+                                </div>
+                                <div class="account-cell">
+                                    <span class={row.statusClass}>{row.frequencyStatus}</span>
+                                </div>
+                                <div class="account-cell">
+                                    <span class={row.visitedClass}>{row.visitedLabel}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <template if:true={showPagination}>
+                        <div class="pagination-bar">
+                            <span class="pagination-range">{rangeLabel}</span>
+                            <div class="pagination-controls">
+                                <button
+                                    type="button"
+                                    class="page-btn"
+                                    onclick={handlePreviousPage}
+                                    disabled={isPrevDisabled}
+                                >
+                                    Previous
+                                </button>
+                                <span class="page-label">{pageLabel}</span>
+                                <button
+                                    type="button"
+                                    class="page-btn"
+                                    onclick={handleNextPage}
+                                    disabled={isNextDisabled}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+
+                <template if:false={hasAccountRows}>
+                    <div class="empty-state">
+                        <template if:true={hasSearchTerm}>No accounts match your search.</template>
+                        <template if:false={hasSearchTerm}>No accounts match this filter.</template>
+                    </div>
+                </template>
+            </section>
+        </div>
+
+        <template if:true={showBadgeModal}>
+            <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open badge-modal">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium badge-modal-title">{badgeModalTitle}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <p class="badge-modal-message">{badgeModalMessage}</p>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button type="button" class="badge-modal-btn" onclick={handleCloseBadgeModal}>Got it</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </article>
+</template>

@@ -1,0 +1,101 @@
+<template>
+    <section class="course-player">
+        <header class="player-header">
+            <div class="header-left">
+                <lightning-button-icon
+                    icon-name="utility:back"
+                    alternative-text="Back to My Learning"
+                    title="Back"
+                    onclick={handleBack}
+                ></lightning-button-icon>
+                <div>
+                    <h1>{player.title}</h1>
+                    <p class="subtitle">{player.status} � {progressLabel}</p>
+                </div>
+            </div>
+            <div class="header-progress">
+                <div class="progress-track">
+                    <div class="progress-fill" style={progressStyle}></div>
+                </div>
+                <template if:true={showCertificateCta}>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        label="View Certificate"
+                        variant="brand"
+                        onclick={handleShowCertificate}
+                    ></lightning-button>
+                </template>
+            </div>
+        </header>
+
+        <div class="player-body">
+            <aside class="curriculum">
+                <h2>Curriculum</h2>
+                <ul>
+                    <template for:each={curriculum} for:item="item">
+                        <li key={item.instanceId}>
+                            <button
+                                class={item.itemClass}
+                                data-id={item.instanceId}
+                                onclick={handleSelectLesson}
+                                type="button"
+                            >
+                                <lightning-icon icon-name={item.statusIcon} size="x-small"></lightning-icon>
+                                <span class="lesson-copy">
+                                    <span class="lesson-title">{item.title}</span>
+                                    <span class="lesson-meta">{item.materialType}</span>
+                                </span>
+                                <lightning-icon icon-name={item.iconName} size="x-small"></lightning-icon>
+                            </button>
+                        </li>
+                    </template>
+                </ul>
+            </aside>
+
+            <main class="stage">
+                <template if:true={selectedItem}>
+                    <h2 class="stage-title">{selectedItem.title}</h2>
+
+                    <template if:true={isContent}>
+                        <c-learning-content-viewer
+                            material-type={selectedItem.materialType}
+                            material-url={selectedItem.materialUrl}
+                            title={selectedItem.title}
+                        ></c-learning-content-viewer>
+                    </template>
+
+                    <template if:true={isQuiz}>
+                        <c-quiz-player
+                            instance-id={selectedItem.instanceId}
+                            onquizcomplete={handleQuizComplete}
+                        ></c-quiz-player>
+                    </template>
+
+                    <div class="stage-nav">
+                        <lightning-button
+                            label="Previous"
+                            disabled={previousDisabled}
+                            onclick={goPrevious}
+                        ></lightning-button>
+                        <div class="stage-nav-right">
+                            <template if:true={canMarkComplete}>
+                                <lightning-button
+                                    class="slds-m-right_small"
+                                    variant="brand"
+                                    label="Mark complete"
+                                    disabled={busy}
+                                    onclick={handleMarkComplete}
+                                ></lightning-button>
+                            </template>
+                            <lightning-button
+                                label="Next"
+                                disabled={nextDisabled}
+                                onclick={goNext}
+                            ></lightning-button>
+                        </div>
+                    </div>
+                </template>
+            </main>
+        </div>
+    </section>
+</template>

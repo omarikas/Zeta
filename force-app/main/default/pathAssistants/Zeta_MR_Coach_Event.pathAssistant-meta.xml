@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathAssistant xmlns="http://soap.sforce.com/2006/04/metadata">
+    <active>true</active>
+    <entityName>Coaching_Event__c</entityName>
+    <fieldName>Status__c</fieldName>
+    <masterLabel>Coaching Event</masterLabel>
+    <pathAssistantSteps>
+        <fieldNames>Manager_Total_Score__c</fieldNames>
+        <fieldNames>Employee_Total_Score__c</fieldNames>
+        <info>&lt;p&gt;Open for evaluation. Complete scores on the Evaluation tab.&lt;/p&gt;</info>
+        <picklistValueName>Available for Scoring</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <info>&lt;p&gt;This coaching event was cancelled.&lt;/p&gt;</info>
+        <picklistValueName>Cancelled</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Manager_Total_Score__c</fieldNames>
+        <fieldNames>Recommended_Action_Plan__c</fieldNames>
+        <info>&lt;p&gt;This coaching event is closed.&lt;/p&gt;</info>
+        <picklistValueName>Closed</picklistValueName>
+    </pathAssistantSteps>
+    <pathAssistantSteps>
+        <fieldNames>Employee__c</fieldNames>
+        <fieldNames>Manager__c</fieldNames>
+        <fieldNames>Coaching_Template__c</fieldNames>
+        <info>&lt;p&gt;Set up the coaching session: assign the employee, manager, and coaching template.&lt;/p&gt;</info>
+        <picklistValueName>Draft</picklistValueName>
+    </pathAssistantSteps>
+    <recordTypeName>__MASTER__</recordTypeName>
+</PathAssistant>

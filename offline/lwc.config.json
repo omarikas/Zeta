@@ -1,0 +1,60 @@
+{
+  "modules": [
+    {
+      "name": "c/fieldRepHomeMetrics",
+      "path": "../force-app/main/default/lwc/fieldRepHomeMetrics/fieldRepHomeMetrics.js"
+    },
+    {
+      "name": "c/fieldRepHomeTodayPlan",
+      "path": "../force-app/main/default/lwc/fieldRepHomeTodayPlan/fieldRepHomeTodayPlan.js"
+    },
+    {
+      "name": "c/fieldRepHomeNextBestCustomer",
+      "path": "../force-app/main/default/lwc/fieldRepHomeNextBestCustomer/fieldRepHomeNextBestCustomer.js"
+    },
+    {
+      "name": "c/fieldRepPlanner",
+      "path": "../force-app/main/default/lwc/fieldRepPlanner/fieldRepPlanner.js"
+    },
+    {
+      "name": "c/plannerMapUtils",
+      "path": "../force-app/main/default/lwc/plannerMapUtils/plannerMapUtils.js"
+    },
+    {
+      "name": "c/plannerMapPins",
+      "path": "../force-app/main/default/lwc/plannerMapPins/plannerMapPins.js"
+    },
+    {
+      "name": "c/plannerAccountCollections",
+      "path": "../force-app/main/default/lwc/plannerAccountCollections/plannerAccountCollections.js"
+    },
+    {
+      "name": "c/visitStatusUtils",
+      "path": "../force-app/main/default/lwc/visitStatusUtils/visitStatusUtils.js"
+    },
+    {
+      "name": "c/clmOfflineStore",
+      "path": "../force-app/main/default/lwc/clmOfflineStore/clmOfflineStore.js"
+    },
+    {
+      "name": "c/plannerRouteUtils",
+      "path": "../force-app/main/default/lwc/plannerRouteUtils/plannerRouteUtils.js"
+    },
+    {
+      "name": "c/clmOfflineSync",
+      "path": "../force-app/main/default/lwc/clmOfflineSync/clmOfflineSync.js"
+    },
+    {
+      "name": "@salesforce/apex/PlannerMobileRestService.getHomeDashboard",
+      "path": "./src/apex/getHomeDashboard.js"
+    },
+    {
+      "name": "@salesforce/apex/PlannerMobileRestService.getTodayPlanPayload",
+      "path": "./src/apex/getTodayPlanPayload.js"
+    },
+    {
+      "name": "@salesforce/apex/PlannerMobileRestService.getNextBestCustomersPayload",
+      "path": "./src/apex/getNextBestCustomersPayload.js"
+    }
+  ]
+}

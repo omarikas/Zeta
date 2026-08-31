@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Form__c</fullName>
+    <description>Dosage form for Detail/Sample products (Tablet, Capsule, Syrup, etc.). Brand Reminder kinds use Brand Reminder Kind.</description>
+    <label>Form</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Tablet</fullName>
+                <default>false</default>
+                <label>Tablet</label>
+            </value>
+            <value>
+                <fullName>Film Coated Tablet</fullName>
+                <default>false</default>
+                <label>Film Coated Tablet</label>
+            </value>
+            <value>
+                <fullName>Sugar Coated Tablet</fullName>
+                <default>false</default>
+                <label>Sugar Coated Tablet</label>
+            </value>
+            <value>
+                <fullName>Capsule</fullName>
+                <default>false</default>
+                <label>Capsule</label>
+            </value>
+            <value>
+                <fullName>Syrup</fullName>
+                <default>false</default>
+                <label>Syrup</label>
+            </value>
+            <value>
+                <fullName>Injection</fullName>
+                <default>false</default>
+                <label>Injection</label>
+            </value>
+            <value>
+                <fullName>Cream</fullName>
+                <default>false</default>
+                <label>Cream</label>
+            </value>
+            <value>
+                <fullName>Gel</fullName>
+                <default>false</default>
+                <label>Gel</label>
+            </value>
+            <value>
+                <fullName>Sachet</fullName>
+                <default>false</default>
+                <label>Sachet</label>
+            </value>
+            <value>
+                <fullName>Drops</fullName>
+                <default>false</default>
+                <label>Drops</label>
+            </value>
+            <value>
+                <fullName>Gummies</fullName>
+                <default>false</default>
+                <label>Gummies</label>
+            </value>
+            <value>
+                <fullName>Ampoule</fullName>
+                <default>false</default>
+                <label>Ampoule</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

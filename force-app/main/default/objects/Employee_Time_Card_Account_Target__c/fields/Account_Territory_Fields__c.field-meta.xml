@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account_Territory_Fields__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Account Territory Fields</label>
+    <referenceTo>Account_Territory_Fields__c</referenceTo>
+    <relationshipLabel>Time Card Account Targets</relationshipLabel>
+    <relationshipName>Time_Card_Account_Targets</relationshipName>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

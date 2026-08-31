@@ -1,0 +1,191 @@
+<template>
+    <div class="eval-container">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+
+        <template if:false={isLoading}>
+            <!-- Header scores -->
+            <div class="eval-header slds-grid slds-wrap slds-gutters slds-m-bottom_medium">
+                <div class="slds-col slds-size_1-of-3 slds-medium-size_1-of-6">
+                    <div class="score-box">
+                        <span class="score-label">Manager Score</span>
+                        <span class="score-value">{formattedManagerScore}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-medium-size_1-of-6">
+                    <div class="score-box">
+                        <span class="score-label">Rep Score</span>
+                        <span class="score-value rep-score">{formattedEmployeeScore}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-medium-size_1-of-6">
+                    <div class="score-box">
+                        <span class="score-label">Previous Score</span>
+                        <span class="score-value">{formattedPreviousScore}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_12-of-12 slds-medium-size_1-of-2 eval-actions">
+                    <template if:false={isEditMode}>
+                        <lightning-button label="Collapse All" onclick={handleCollapseAll} class="slds-m-right_x-small"></lightning-button>
+                        <lightning-button label="Expand All" onclick={handleExpandAll} class="slds-m-right_x-small"></lightning-button>
+                        <template if:true={showRequestSelfEval}>
+                            <lightning-button label="Request Self-Evaluation" onclick={handleRequestSelfEval} class="slds-m-right_x-small"></lightning-button>
+                        </template>
+                        <lightning-button label="Edit" variant="brand" onclick={handleEdit}></lightning-button>
+                    </template>
+                    <template if:true={isEditMode}>
+                        <lightning-button label="Cancel" onclick={handleCancelEdit} class="slds-m-right_x-small"></lightning-button>
+                        <lightning-button label="Save" variant="brand" onclick={handleSave} disabled={isSaving}></lightning-button>
+                    </template>
+                </div>
+            </div>
+
+            <template if:true={hasSections}>
+                <lightning-accordion
+                    allow-multiple-sections-open
+                    active-section-name={activeSections}
+                    onsectiontoggle={handleSectionToggle}>
+                    <template for:each={sections} for:item="section">
+                        <lightning-accordion-section key={section.name} name={section.name} label={section.name}>
+                            <template for:each={section.questions} for:item="q">
+                                <article key={q.id} class={q.cardClass}>
+                                    <h3 class="competency-label">{q.label}</h3>
+
+                                    <!-- Dual-marker scale: coach above rail, rep below rail -->
+                                    <div class="scale-lane">
+                                        <div class="scale-manager-lane">
+                                            <template if:true={q.showManagerMarker}>
+                                                <div class="score-badge manager-badge" style={q.managerBadgeStyle}>
+                                                    <span class="badge-role">Coach Score</span>
+                                                    <span class="badge-label">{q.managerLabel}</span>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <div class="scale-rail">
+                                            <div class="scale-gradient"></div>
+                                            <template for:each={q.scalePoints} for:item="pt">
+                                                <button
+                                                    key={pt.key}
+                                                    type="button"
+                                                    class="scale-node"
+                                                    style={pt.leftStyle}
+                                                    data-question-id={q.id}
+                                                    data-value={pt.value}
+                                                    data-role="manager"
+                                                    onclick={handleScaleClick}
+                                                    disabled={q.isManagerReadonly}
+                                                    title={pt.value}>
+                                                </button>
+                                            </template>
+                                            <template if:true={q.showManagerMarker}>
+                                                <div class="rail-marker manager-rail-marker" style={q.managerMarkerStyle}></div>
+                                            </template>
+                                            <template if:true={q.showEmployeeMarker}>
+                                                <div class="rail-marker employee-rail-marker" style={q.employeeMarkerStyle}></div>
+                                            </template>
+                                        </div>
+
+                                        <div class="scale-employee-lane">
+                                            <template if:true={q.showEmployeeMarker}>
+                                                <div class="score-badge employee-badge" style={q.employeeBadgeStyle}>
+                                                    <span class="badge-role">Rep Score</span>
+                                                    <span class="badge-label">{q.employeeLabel}</span>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <div class="scale-end-labels">
+                                            <span class="scale-end-label">{q.scaleMinLabel}</span>
+                                            <span class="scale-end-label">{q.scaleMaxLabel}</span>
+                                        </div>
+
+                                        <template if:true={isEditMode}>
+                                            <div class="scale-legend">
+                                                <span class="legend-item manager-legend">Coach — above the line</span>
+                                                <span class="legend-item employee-legend">Rep — below the line</span>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Comments -->
+                                    <div class="comments-row slds-grid slds-gutters slds-m-top_small">
+                                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                            <lightning-textarea
+                                                label="Manager's comments"
+                                                value={q.managerComments}
+                                                data-question-id={q.id}
+                                                data-role="manager"
+                                                onchange={handleCommentChange}
+                                                disabled={q.isManagerReadonly}
+                                                rows="3">
+                                            </lightning-textarea>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                            <lightning-textarea
+                                                label="Employee Comments"
+                                                value={q.employeeComments}
+                                                data-question-id={q.id}
+                                                data-role="employee"
+                                                onchange={handleCommentChange}
+                                                disabled={q.isEmployeeReadonly}
+                                                rows="3">
+                                            </lightning-textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Edit mode: rep scale selector -->
+                                    <template if:true={isEditMode}>
+                                        <div class="edit-scale-row slds-m-top_x-small">
+                                            <template if:true={q.canEditManager}>
+                                                <div class="edit-scale-group">
+                                                    <span class="edit-scale-label">Set Coach Score:</span>
+                                                    <template for:each={q.scalePoints} for:item="pt">
+                                                        <lightning-button
+                                                            key={pt.key}
+                                                            label={pt.value}
+                                                            variant={pt.managerVariant}
+                                                            data-question-id={q.id}
+                                                            data-value={pt.value}
+                                                            data-role="manager"
+                                                            onclick={handleScaleClick}
+                                                            class="slds-m-right_xx-small scale-btn">
+                                                        </lightning-button>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template if:true={q.canEditEmployee}>
+                                                <div class="edit-scale-group slds-m-top_x-small">
+                                                    <span class="edit-scale-label">Set Rep Score:</span>
+                                                    <template for:each={q.scalePoints} for:item="pt">
+                                                        <lightning-button
+                                                            key={pt.key}
+                                                            label={pt.value}
+                                                            variant={pt.employeeVariant}
+                                                            data-question-id={q.id}
+                                                            data-value={pt.value}
+                                                            data-role="employee"
+                                                            onclick={handleScaleClick}
+                                                            class="slds-m-right_xx-small scale-btn">
+                                                        </lightning-button>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </article>
+                            </template>
+                        </lightning-accordion-section>
+                    </template>
+                </lightning-accordion>
+            </template>
+
+            <template if:false={hasSections}>
+                <div class="slds-illustration slds-illustration_small slds-p-around_large">
+                    <p class="slds-text-body_regular">No evaluation questions found on the linked coaching template.</p>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

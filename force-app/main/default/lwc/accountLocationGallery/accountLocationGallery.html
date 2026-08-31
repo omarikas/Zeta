@@ -1,0 +1,77 @@
+<template>
+    <lightning-card title="Location Photos" icon-name="standard:location">
+        <div slot="actions">
+            <lightning-button
+                label="Refresh Maps Phone"
+                title="Look up public phone from Google Places / OSM"
+                onclick={handleEnrich}
+                disabled={isBusy}
+            ></lightning-button>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="slds-p-around_medium slds-align_absolute-center">
+                <lightning-spinner alternative-text="Loading location" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                <template if:true={errorMessage}>
+                    <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+                </template>
+
+                <template if:true={mapsPhone}>
+                    <p class="slds-m-bottom_small">
+                        <span class="label">Maps Phone</span>
+                        <a href={mapsPhoneHref}>{mapsPhone}</a>
+                    </p>
+                </template>
+                <template if:false={mapsPhone}>
+                    <p class="slds-m-bottom_small slds-text-color_weak">
+                        No maps phone yet. Use Refresh Maps Phone after the address is geocoded.
+                    </p>
+                </template>
+
+                <template if:true={addressLine}>
+                    <p class="slds-m-bottom_small slds-text-body_small slds-text-color_weak">{addressLine}</p>
+                </template>
+
+                <template if:true={message}>
+                    <p class="slds-m-bottom_small slds-text-body_small">{message}</p>
+                </template>
+
+                <template if:true={hasMapMarkers}>
+                    <div class="map-frame slds-m-bottom_small">
+                        <lightning-map
+                            map-markers={mapMarkers}
+                            zoom-level="16"
+                            list-view="hidden"
+                        ></lightning-map>
+                    </div>
+                </template>
+
+                <div class="photo-grid">
+                    <template if:true={streetViewUrl}>
+                        <figure class="photo-card">
+                            <img src={streetViewUrl} alt="Street view of account location" />
+                            <figcaption>Street View</figcaption>
+                        </figure>
+                    </template>
+                    <template if:true={staticMapUrl}>
+                        <figure class="photo-card">
+                            <img src={staticMapUrl} alt="Map preview of account location" />
+                            <figcaption>Map Preview</figcaption>
+                        </figure>
+                    </template>
+                    <template for:each={photoUrls} for:item="url" for:index="idx">
+                        <figure key={url} class="photo-card">
+                            <img src={url} alt="Place photo" />
+                            <figcaption>Place photo</figcaption>
+                        </figure>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </lightning-card>
+</template>

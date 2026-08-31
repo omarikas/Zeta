@@ -1,0 +1,158 @@
+.course-player {
+    background: #fff;
+    border: 1px solid #d8e2ec;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e5e5;
+    background: linear-gradient(90deg, #0b3d5c, #145a86);
+    color: #fff;
+    flex-wrap: wrap;
+}
+
+.header-left {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.player-header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.subtitle {
+    margin: 0.15rem 0 0;
+    opacity: 0.85;
+    font-size: 0.85rem;
+}
+
+.header-progress {
+    display: flex;
+    align-items: center;
+    min-width: 220px;
+    flex: 1;
+    max-width: 420px;
+}
+
+.progress-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #7ad0ff;
+}
+
+.player-body {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 520px;
+}
+
+.curriculum {
+    border-right: 1px solid #e5e5e5;
+    background: #f7fafc;
+    padding: 1rem 0.75rem;
+}
+
+.curriculum h2 {
+    margin: 0 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #706e6b;
+}
+
+.curriculum ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.curriculum-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 0.7rem 0.55rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.curriculum-item:hover,
+.curriculum-item.is-selected {
+    background: #e8f3fb;
+}
+
+.curriculum-item.is-complete {
+    color: #2e844a;
+}
+
+.lesson-copy {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.lesson-title {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lesson-meta {
+    font-size: 0.75rem;
+    color: #706e6b;
+}
+
+.stage {
+    padding: 1.25rem;
+}
+
+.stage-title {
+    margin: 0 0 1rem;
+    color: #0b3d5c;
+}
+
+.stage-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e5e5;
+}
+
+.stage-nav-right {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .player-body {
+        grid-template-columns: 1fr;
+    }
+
+    .curriculum {
+        border-right: none;
+        border-bottom: 1px solid #e5e5e5;
+        max-height: 220px;
+        overflow: auto;
+    }
+}

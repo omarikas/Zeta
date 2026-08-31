@@ -1,0 +1,29 @@
+<template>
+    <lightning-card title="Product Image" icon-name="standard:product">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template lwc:if={hasImage}>
+                <div class="image-frame">
+                    <img src={imageUrl} alt={name} class="product-image" onerror={handleImageError} />
+                </div>
+            </template>
+            <template lwc:else>
+                <div class="image-frame image-fallback">
+                    <lightning-icon icon-name="utility:image" size="large" alternative-text="No product image"></lightning-icon>
+                    <p class="slds-text-body_small slds-m-top_small slds-text-color_weak">No website image on this product</p>
+                </div>
+            </template>
+
+            <template lwc:if={subtitle}>
+                <p class="slds-text-body_small slds-m-top_small slds-text-color_weak">{subtitle}</p>
+            </template>
+            <template lwc:if={brand}>
+                <p class="slds-text-body_small">{brand}</p>
+            </template>
+            <template lwc:if={websiteUrl}>
+                <div class="slds-m-top_small">
+                    <a href={websiteUrl} target="_blank" rel="noopener noreferrer">View on zetapharma.net</a>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

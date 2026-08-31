@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176d3" />
+    <title>Visits — Pharma Field PWA</title>
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="visits.css" />
+</head>
+<body>
+    <header class="visit-hero-header">
+        <div class="nav-left">
+            <button id="btn-back" class="back-btn" aria-label="Back to visits list">←</button>
+            <span class="nav-title" id="visit-title">Visits</span>
+        </div>
+        <div class="visit-hero-actions" id="hero-actions" style="display:none">
+            <button id="btn-view-account" class="toolbar-btn">View Account</button>
+            <button id="btn-open-planner" class="toolbar-btn">Field Planner</button>
+        </div>
+    </header>
+
+    <div id="visits-list-view">
+        <div class="toolbar">
+            <input id="visit-search" class="search-input" type="search" placeholder="Search visits..." aria-label="Search visits" />
+            <select id="visit-status-filter" class="toolbar-filter" aria-label="Filter by status">
+                <option value="All">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+        <ul id="visit-list" class="visit-list"></ul>
+        <div id="visit-list-loading" class="loading-msg">Loading visits…</div>
+        <div id="visit-list-empty" class="empty-state" style="display:none">No visits found.</div>
+    </div>
+
+    <div id="visit-detail-view" style="display:none">
+        <div class="visit-hero">
+            <div class="visit-hero-top">
+                <span id="visit-account-badge" class="account-badge">—</span>
+                <span id="visit-status-badge" class="status-badge">—</span>
+            </div>
+            <h1 id="visit-account-name" class="visit-account-name"></h1>
+            <p id="visit-account-meta" class="visit-account-meta"></p>
+        </div>
+
+        <div class="visit-path" id="visit-path"></div>
+
+        <div class="visit-layout">
+            <nav class="visit-nav" aria-label="Visit sections">
+                <button class="nav-item nav-item-active" data-key="details">Details</button>
+                <button class="nav-item" data-key="presentations">Presentations</button>
+                <button class="nav-item" data-key="samples">Dispense</button>
+                <button class="nav-item" data-key="items">Items</button>
+                <button class="nav-item" data-key="attachments">Attachments</button>
+            </nav>
+
+            <div class="visit-content">
+                <div id="tab-details" class="visit-tab">
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <article class="visit-panel">
+                                <h2 class="visit-panel-title">Visit Details</h2>
+                                <dl class="visit-detail-list">
+                                    <div class="visit-detail-row"><dt>Visit</dt><dd id="vd-name">—</dd></div>
+                                    <div class="visit-detail-row"><dt>Start</dt><dd id="vd-start">—</dd></div>
+                                    <div class="visit-detail-row"><dt>End</dt><dd id="vd-end">—</dd></div>
+                                    <div class="visit-detail-row"><dt>Duration</dt><dd id="vd-duration">—</dd></div>
+                                    <div class="visit-detail-row"><dt>Visit Type</dt><dd id="vd-type">—</dd></div>
+                                    <div class="visit-detail-row"><dt>Assigned To</dt><dd id="vd-assigned">—</dd></div>
+                                </dl>
+                                <div id="vd-plan-rejection" class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_small" style="display:none" role="alert">
+                                    <h2>Plan rejected</h2>
+                                    <p id="vd-plan-rejection-text"></p>
+                                </div>
+                                <div id="vd-pending-approval" class="slds-notify slds-notify_alert slds-theme_info slds-m-bottom_small" style="display:none" role="status">
+                                    Pending manager approval — this visit is read-only until approved or rejected.
+                                </div>
+                                <label class="slds-m-top_small" for="vd-status">Status</label>
+                                <select id="vd-status" class="slds-m-top_small">
+                                    <option value="Draft">Draft</option>
+                                    <option value="Submitted">Submitted</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <div id="vd-cancellation-field" style="display:none" class="slds-m-top_small">
+                                    <label for="vd-cancellation">Cancellation Reason</label>
+                                    <textarea id="vd-cancellation" placeholder="Reason for cancellation…"></textarea>
+                                </div>
+                            </article>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                            <article class="visit-panel">
+                                <h2 class="visit-panel-title">Call Planning &amp; Reporting</h2>
+                                <p class="visit-panel-subtitle">Capture your call objective, products discussed, and follow-up.</p>
+                                <label for="vd-objective">Visit Objective</label>
+                                <textarea id="vd-objective" placeholder="What do you want to achieve on this call?"></textarea>
+                                <label class="slds-m-top_small" for="vd-products">Products Discussed</label>
+                                <input id="vd-products" type="text" placeholder="Products discussed" />
+                                <label class="slds-m-top_small" for="vd-product-details">Product Details</label>
+                                <textarea id="vd-product-details" placeholder="Indications, key messages, objections, and sample details."></textarea>
+                                <label class="slds-m-top_small" for="vd-notes">Visit Notes</label>
+                                <textarea id="vd-notes" placeholder="Key discussion points and outcomes."></textarea>
+                                <label class="slds-m-top_small" for="vd-next-visit">Next Visit Date</label>
+                                <input id="vd-next-visit" type="date" />
+                            </article>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-presentations" class="visit-tab" style="display:none">
+                    <article class="visit-panel placeholder-panel">
+                        <h2 class="visit-panel-title">Presentations</h2>
+                        <p class="visit-panel-subtitle">CLM content will launch here.</p>
+                    </article>
+                </div>
+
+                <div id="tab-samples" class="visit-tab" style="display:none">
+                    <article class="visit-panel placeholder-panel">
+                        <h2 class="visit-panel-title">Dispense</h2>
+                        <p class="visit-panel-subtitle">This section is reserved for a future release.</p>
+                    </article>
+                </div>
+
+                <div id="tab-items" class="visit-tab" style="display:none">
+                    <article class="visit-panel placeholder-panel">
+                        <h2 class="visit-panel-title">Items</h2>
+                        <p class="visit-panel-subtitle">This section is reserved for a future release.</p>
+                    </article>
+                </div>
+
+                <div id="tab-attachments" class="visit-tab" style="display:none">
+                    <article class="visit-panel placeholder-panel">
+                        <h2 class="visit-panel-title">Attachments</h2>
+                        <p class="visit-panel-subtitle">This section is reserved for a future release.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <footer class="visit-footer">
+            <button id="btn-save-visit" class="save-btn">Save Visit</button>
+        </footer>
+    </div>
+
+    <div id="visit-error" class="error-banner" style="display:none" role="alert"></div>
+
+    <script type="module" src="visits.js"></script>
+</body>
+</html>
