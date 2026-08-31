@@ -16,12 +16,11 @@ const INSTANCE_URL_KEY = 'zeta.pwa.sfInstanceUrl';
 let currentTab = 'home';
 
 // OAuth Configuration
-// Update these values after deploying the Connected App to Salesforce
 const OAUTH_CONFIG = {
-    clientId: 'YOUR_CONNECTED_APP_CONSUMER_KEY',
+    clientId: '3MVG9U65ySgtae71Qj6sHa91riQi5zYnDUuWE7JjImuS_88hpRINjnlWStuC5L6xuY2ynVxdKcMxVcQQ5k7c0',
     loginUrl: 'https://zetapharma.my.salesforce.com',
     callbackUrl: 'https://omarikas.github.io/Zeta',
-    scopes: 'api refresh_token web'
+    scopes: 'Api RefreshToken Web'
 };
 
 function readToken() {
@@ -80,7 +79,7 @@ async function exchangeCodeForToken(code) {
     const params = new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: 'YOUR_CONNECTED_APP_CONSUMER_SECRET',
+        client_secret: '80B2C3107CC53215C621676D854B96C93E8F8B03D6C4DD5E23000E4F2AA37F51',
         redirect_uri: OAUTH_CONFIG.callbackUrl,
         code: code
     });
@@ -108,7 +107,7 @@ async function refreshAccessToken() {
     const params = new URLSearchParams({
         grant_type: 'refresh_token',
         client_id: OAUTH_CONFIG.clientId,
-        client_secret: 'YOUR_CONNECTED_APP_CONSUMER_SECRET',
+        client_secret: '80B2C3107CC53215C621676D854B96C93E8F8B03D6C4DD5E23000E4F2AA37F51',
         refresh_token: refreshToken
     });
 
