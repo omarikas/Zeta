@@ -9,14 +9,9 @@ export default class Icon extends LightningElement {
 
     get glyph() {
         if (!this.iconName) return '';
-        if (this.iconName.includes('event')) return '📅';
-        if (this.iconName.includes('checkin') || this.iconName.includes('pin') || this.iconName.includes('location')) return '📍';
         if (this.iconName.includes('add')) return '＋';
         if (this.iconName.includes('close')) return '✕';
-        if (this.iconName.includes('filter')) return '🔍';
         if (this.iconName.includes('refresh')) return '↻';
-        if (this.iconName.includes('user')) return '👤';
-        if (this.iconName.includes('account')) return '🏢';
         return '•';
     }
 

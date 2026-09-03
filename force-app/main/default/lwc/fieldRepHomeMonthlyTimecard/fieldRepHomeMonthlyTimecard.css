@@ -1,0 +1,55 @@
+.timecard-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.timecard-header {
+    margin-bottom: 0.75rem;
+}
+
+.timecard-subtitle {
+    margin: 0.125rem 0 0;
+    font-size: 0.75rem;
+    color: #706e6b;
+}
+
+.timecard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.625rem;
+}
+
+.timecard-tile {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: #fafbfc;
+}
+
+.tile-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tile-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #706e6b;
+}
+
+.tile-value {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: #032d60;
+}
+
+.timecard-loading,
+.timecard-empty {
+    color: #706e6b;
+    font-size: 0.8125rem;
+}

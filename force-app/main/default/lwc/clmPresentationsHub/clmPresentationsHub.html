@@ -6,13 +6,25 @@
                 <h1>CLM Presentations</h1>
                 <p>Select a presentation to present immediately.</p>
             </div>
-            <lightning-button
-                label="Refresh"
-                icon-name="utility:refresh"
-                onclick={loadPresentations}
-                disabled={isLoading}
-            ></lightning-button>
+            <div class="hub-header-actions">
+                <lightning-button
+                    label="Save all offline"
+                    icon-name="utility:download"
+                    onclick={handleSaveAllOffline}
+                    disabled={isSaving}
+                ></lightning-button>
+                <lightning-button
+                    label="Refresh"
+                    icon-name="utility:refresh"
+                    onclick={loadPresentations}
+                    disabled={isLoading}
+                ></lightning-button>
+            </div>
         </header>
+
+        <template if:true={isSaving}>
+            <p class="save-progress">{saveLabel}</p>
+        </template>
 
         <template if:true={showPlayer}>
             <c-clm-player

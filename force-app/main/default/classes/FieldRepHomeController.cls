@@ -20,7 +20,24 @@ public with sharing class FieldRepHomeController {
         @AuraEnabled public Decimal rfPercentTotal;
         @AuraEnabled public Decimal mfPercentTotal;
 
+        @AuraEnabled public Decimal actualVisitsTotal;
+        @AuraEnabled public Decimal targetVisitsTotal;
+        @AuraEnabled public Decimal plannedVisitsTotal;
+        @AuraEnabled public Decimal remainingCalls;
+
         @AuraEnabled public List<ClassificationMetrics> byClassification;
+    }
+
+    public class HomeFilterOption {
+        @AuraEnabled public String label;
+        @AuraEnabled public String value;
+    }
+
+    public class HomeFilterOptions {
+        @AuraEnabled public List<HomeFilterOption> recordTypes;
+        @AuraEnabled public List<HomeFilterOption> subtypes;
+        @AuraEnabled public List<HomeFilterOption> classifications;
+        @AuraEnabled public List<HomeFilterOption> bricks;
     }
 
     public class AccountCoverageRow {
@@ -47,6 +64,13 @@ public with sharing class FieldRepHomeController {
         @AuraEnabled public Decimal reachPercent;
         @AuraEnabled public String frequencyStatus;
         @AuraEnabled public Boolean isVisited;
+
+        @AuraEnabled public String recordTypeDeveloperName;
+        @AuraEnabled public String recordTypeLabel;
+        @AuraEnabled public String accountSubtype;
+        @AuraEnabled public String hcpClassification;
+        @AuraEnabled public Id brickId;
+        @AuraEnabled public String brickName;
     }
 
     public class NextBestCustomerRow {
@@ -67,6 +91,9 @@ public with sharing class FieldRepHomeController {
         @AuraEnabled public String potential;
         @AuraEnabled public String penetration;
         @AuraEnabled public String calculatedClassification;
+
+        @AuraEnabled public String urgency;
+        @AuraEnabled public String description;
     }
 
     public class BadgeResult {
@@ -149,6 +176,7 @@ public with sharing class FieldRepHomeController {
             WHERE Employee_Time_Card__c = :timeCard.Id
             WITH USER_MODE
         ];
+        Set<Id> scopedAccountIds = selectedTerritoryAccountIds(resolvedUserId);
 
         Decimal actualTotal = 0;
         Decimal targetTotal = 0;
@@ -164,6 +192,9 @@ public with sharing class FieldRepHomeController {
         Map<String, Integer> mcfCountByClass = new Map<String, Integer>();
 
         for (Employee_Time_Card_Account_Target__c t : targets) {
+            if (!isInSelectedTerritory(t.Account__c, scopedAccountIds)) {
+                continue;
+            }
             String clazz = normalizeClass(t.Potentiality__c);
             totalCount++;
 
@@ -211,8 +242,17 @@ public with sharing class FieldRepHomeController {
             mcfTotal += valueOrZeroInt(mcfCountByClass.get(clazz));
         }
         result.lfPercentTotal = calculatePercent(lcfTotal, totalCount);
-        result.rfPercentTotal = calculatePercent(rcfTotal, totalCount);
+        result.rfPercentTotal = calculatePercent(rcfTotal + mcfTotal, totalCount);
         result.mfPercentTotal = calculatePercent(mcfTotal, totalCount);
+        result.actualVisitsTotal = actualTotal;
+        result.targetVisitsTotal = targetTotal;
+        result.plannedVisitsTotal = countPlannedVisitsForMonth(
+            resolvedUserId,
+            targets,
+            scopedAccountIds,
+            timeCard
+        );
+        result.remainingCalls = computeRemainingCalls(targets, scopedAccountIds);
 
         List<ClassificationMetrics> byClass = new List<ClassificationMetrics>();
         for (String clazz : new List<String>{ 'A', 'B', 'C' }) {
@@ -221,7 +261,10 @@ public with sharing class FieldRepHomeController {
             row.visitCoveragePercent = calculatePercent(actualByClass.get(clazz), targetByClass.get(clazz));
             row.customerCoveragePercent = calculatePercent(visitedCountByClass.get(clazz), totalCountByClass.get(clazz));
             row.lfPercent = calculatePercent(valueOrZeroInt(lcfCountByClass.get(clazz)), valueOrZeroInt(totalCountByClass.get(clazz)));
-            row.rfPercent = calculatePercent(valueOrZeroInt(rcfCountByClass.get(clazz)), valueOrZeroInt(totalCountByClass.get(clazz)));
+            row.rfPercent = calculatePercent(
+                valueOrZeroInt(rcfCountByClass.get(clazz)) + valueOrZeroInt(mcfCountByClass.get(clazz)),
+                valueOrZeroInt(totalCountByClass.get(clazz))
+            );
             row.mfPercent = calculatePercent(valueOrZeroInt(mcfCountByClass.get(clazz)), valueOrZeroInt(totalCountByClass.get(clazz)));
             byClass.add(row);
         }
@@ -231,9 +274,219 @@ public with sharing class FieldRepHomeController {
     }
 
     @AuraEnabled
+    public static MonthlyTimecardSummary getMonthlyTimecardSummary(Id contextUserId) {
+        Id resolvedUserId = resolveUserId(contextUserId);
+        Employee_Time_Card__c timeCard = resolveOrEnsureTimeCard(resolvedUserId);
+        MonthlyTimecardSummary result = new MonthlyTimecardSummary();
+        if (timeCard == null) {
+            return result;
+        }
+
+        List<Employee_Time_Card__c> cards = [
+            SELECT Id
+            FROM Employee_Time_Card__c
+            WHERE Id = :timeCard.Id
+            WITH USER_MODE
+            LIMIT 1
+        ];
+        Employee_Time_Card__c cardWithRollups = cards.isEmpty() ? timeCard : cards[0];
+
+        Date monthStart = Date.today().toStartOfMonth();
+        Date monthEnd = monthStart.addMonths(1).addDays(-1);
+
+        Integer fieldDays = 0;
+        Integer coachedDays = 0;
+        Integer activityDays = 0;
+        Integer submittedCalls = 0;
+
+        for (Employee_Time_Card_Day_Entry__c entry : [
+            SELECT
+                Calendar_Working_Days__c,
+                Days_with_Activities__c,
+                Submitted_Calls__c
+            FROM Employee_Time_Card_Day_Entry__c
+            WHERE Employee_Time_Card__c = :timeCard.Id
+            WITH USER_MODE
+        ]) {
+            if (valueOrZero(entry.Calendar_Working_Days__c) > 0) {
+                fieldDays++;
+            }
+            if (valueOrZero(entry.Days_with_Activities__c) > 0) {
+                activityDays++;
+            }
+            submittedCalls += valueOrZeroInt(Integer.valueOf(entry.Submitted_Calls__c == null ? 0 : entry.Submitted_Calls__c.intValue()));
+        }
+
+        LeaveBreakdown leaves = loadLeaveBreakdown(resolvedUserId, monthStart, monthEnd);
+        Boolean isManager = isManagerUser(resolvedUserId);
+
+        result.fieldDays = fieldDays;
+        result.coachedDays = coachedDays;
+        result.coachingDays = isManager ? coachedDays : 0;
+        result.activityDays = activityDays;
+        result.submittedCalls = submittedCalls;
+        result.leaveDays = leaves.totalLeaveDays;
+        result.sickLeaveDays = leaves.sickLeaveDays;
+        result.annualVacationDays = leaves.annualVacationDays;
+        result.conferenceDays = leaves.conferenceDays;
+        result.publicHolidayDays = leaves.publicHolidayDays;
+        result.isManager = isManager;
+        result.monthLabel = monthStart.format();
+        return result;
+    }
+
+    public class MonthlyTimecardSummary {
+        @AuraEnabled public Integer fieldDays;
+        @AuraEnabled public Integer coachedDays;
+        @AuraEnabled public Integer coachingDays;
+        @AuraEnabled public Integer activityDays;
+        @AuraEnabled public Integer submittedCalls;
+        @AuraEnabled public Integer leaveDays;
+        @AuraEnabled public Integer sickLeaveDays;
+        @AuraEnabled public Integer annualVacationDays;
+        @AuraEnabled public Integer conferenceDays;
+        @AuraEnabled public Integer publicHolidayDays;
+        @AuraEnabled public Boolean isManager;
+        @AuraEnabled public String monthLabel;
+    }
+
+    private class LeaveBreakdown {
+        public Integer totalLeaveDays = 0;
+        public Integer sickLeaveDays = 0;
+        public Integer annualVacationDays = 0;
+        public Integer conferenceDays = 0;
+        public Integer publicHolidayDays = 0;
+    }
+
+    private static LeaveBreakdown loadLeaveBreakdown(Id userId, Date monthStart, Date monthEnd) {
+        LeaveBreakdown result = new LeaveBreakdown();
+        DateTime startDt = DateTime.newInstance(monthStart, Time.newInstance(0, 0, 0, 0));
+        DateTime endDt = DateTime.newInstance(monthEnd, Time.newInstance(23, 59, 59, 0));
+        for (Time_Off_Request__c tot : [
+            SELECT Type__c, Span_Duration__c, Stage__c
+            FROM Time_Off_Request__c
+            WHERE
+                OwnerId = :userId
+                AND Stage__c = 'Approved'
+                AND Start_Date_Time__c <= :endDt
+                AND End_Date_Time__c >= :startDt
+            WITH USER_MODE
+        ]) {
+            Decimal days = valueOrZero(tot.Span_Duration__c);
+            if (days <= 0) {
+                days = 1;
+            }
+            Integer dayCount = Integer.valueOf(days.intValue());
+            result.totalLeaveDays += dayCount;
+            if (tot.Type__c == 'Sick Leave') {
+                result.sickLeaveDays += dayCount;
+            } else if (tot.Type__c == 'Annual Vacation') {
+                result.annualVacationDays += dayCount;
+            } else if (tot.Type__c == 'Conference') {
+                result.conferenceDays += dayCount;
+            } else if (tot.Type__c == 'Holiday') {
+                result.publicHolidayDays += dayCount;
+            }
+        }
+        return result;
+    }
+
+    private static Boolean isManagerUser(Id userId) {
+        List<User> users = [
+            SELECT Profile.Name
+            FROM User
+            WHERE Id = :userId
+            WITH USER_MODE
+            LIMIT 1
+        ];
+        if (users.isEmpty()) {
+            return false;
+        }
+        String profileName = users[0].Profile.Name == null ? '' : users[0].Profile.Name.toLowerCase();
+        return profileName.contains('manager')
+            || profileName.contains('district')
+            || profileName.contains('nsm');
+    }
+
+    @AuraEnabled
+    public static HomeFilterOptions getHomeFilterOptions(Id contextUserId) {
+        Id resolvedUserId = resolveUserId(contextUserId);
+        Employee_Time_Card__c timeCard = resolveOrEnsureTimeCard(resolvedUserId);
+        HomeFilterOptions result = new HomeFilterOptions();
+        result.recordTypes = new List<HomeFilterOption>{
+            option('All', 'All'),
+            option('HCP', 'Medical_Professional_HCP'),
+            option('HCO', 'Institution_HCO'),
+            option('Pharmacy', 'Pharmacy')
+        };
+        result.subtypes = new List<HomeFilterOption>{ option('All', 'All') };
+        result.classifications = new List<HomeFilterOption>{ option('All', 'All') };
+        result.bricks = new List<HomeFilterOption>{ option('All', 'All') };
+
+        if (timeCard == null) {
+            return result;
+        }
+
+        Set<Id> scopedAccountIds = selectedTerritoryAccountIds(resolvedUserId);
+        Set<String> subtypes = new Set<String>();
+        Set<String> classifications = new Set<String>();
+        Set<Id> brickIds = new Set<Id>();
+
+        List<Employee_Time_Card_Account_Target__c> targets = [
+            SELECT
+                Account__r.Institution_Type__c,
+                Account__r.Brick__c,
+                Account_Territory_Fields__r.HCP_Classification__c
+            FROM Employee_Time_Card_Account_Target__c
+            WHERE Employee_Time_Card__c = :timeCard.Id
+            WITH USER_MODE
+        ];
+        for (Employee_Time_Card_Account_Target__c t : targets) {
+            if (!isInSelectedTerritory(t.Account__c, scopedAccountIds)) {
+                continue;
+            }
+            if (t.Account__r != null && String.isNotBlank(t.Account__r.Institution_Type__c)) {
+                subtypes.add(t.Account__r.Institution_Type__c);
+            }
+            if (t.Account_Territory_Fields__r != null && String.isNotBlank(t.Account_Territory_Fields__r.HCP_Classification__c)) {
+                classifications.add(t.Account_Territory_Fields__r.HCP_Classification__c);
+            }
+            if (t.Account__r != null && t.Account__r.Brick__c != null) {
+                brickIds.add(t.Account__r.Brick__c);
+            }
+        }
+
+        for (String subtype : sortedStrings(subtypes)) {
+            result.subtypes.add(option(subtype, subtype));
+        }
+        for (String classCode : sortedClassifications(classifications)) {
+            result.classifications.add(option(classCode, classCode));
+        }
+        if (!brickIds.isEmpty()) {
+            for (Brick__c brick : [
+                SELECT Id, Name, Brick_Code__c
+                FROM Brick__c
+                WHERE Id IN :brickIds
+                WITH USER_MODE
+                ORDER BY Name ASC
+            ]) {
+                String label = String.isNotBlank(brick.Brick_Code__c)
+                    ? brick.Brick_Code__c + ' — ' + brick.Name
+                    : brick.Name;
+                result.bricks.add(option(label, String.valueOf(brick.Id)));
+            }
+        }
+        return result;
+    }
+
+    @AuraEnabled
     public static List<AccountCoverageRow> getAccountCoverageRows(
         Id contextUserId,
-        String classificationFilter
+        String classificationFilter,
+        String recordTypeFilter,
+        String subtypeFilter,
+        String hcpClassificationFilter,
+        Id brickFilter
     ) {
         Id resolvedUserId = resolveUserId(contextUserId);
         Employee_Time_Card__c timeCard = resolveOrEnsureTimeCard(resolvedUserId);
@@ -253,6 +506,12 @@ public with sharing class FieldRepHomeController {
                 Account__r.BillingLongitude,
                 Account__r.Specialty_1__c,
                 Account__r.BillingCity,
+                Account__r.Institution_Type__c,
+                Account__r.Brick__c,
+                Account__r.Brick__r.Name,
+                Account__r.Brick__r.Brick_Code__c,
+                Account__r.RecordType.DeveloperName,
+                Account__r.RecordType.Name,
                 Actual_Visits__c,
                 Target_Visit_Frequency__c,
                 Reach_Percent__c,
@@ -262,7 +521,8 @@ public with sharing class FieldRepHomeController {
                 Account_Territory_Fields__r.Potential__c,
                 Account_Territory_Fields__r.Penetration__c,
                 Account_Territory_Fields__r.Matrix_Rating__c,
-                Account_Territory_Fields__r.Classification__c
+                Account_Territory_Fields__r.Classification__c,
+                Account_Territory_Fields__r.HCP_Classification__c
             FROM Employee_Time_Card_Account_Target__c
             WHERE Employee_Time_Card__c = :timeCard.Id
             WITH USER_MODE
@@ -270,10 +530,44 @@ public with sharing class FieldRepHomeController {
             LIMIT :MAX_ACCOUNT_ROWS
         ];
 
+        String normalizedRecordType = String.isBlank(recordTypeFilter) || recordTypeFilter == 'All'
+            ? null
+            : recordTypeFilter.trim();
+        String normalizedSubtype = String.isBlank(subtypeFilter) || subtypeFilter == 'All'
+            ? null
+            : subtypeFilter.trim();
+        String normalizedHcpClass = String.isBlank(hcpClassificationFilter) || hcpClassificationFilter == 'All'
+            ? null
+            : hcpClassificationFilter.trim().toUpperCase();
+
         List<AccountCoverageRow> rows = new List<AccountCoverageRow>();
+        Set<Id> scopedAccountIds = selectedTerritoryAccountIds(resolvedUserId);
         for (Employee_Time_Card_Account_Target__c t : targets) {
+            if (!isInSelectedTerritory(t.Account__c, scopedAccountIds)) {
+                continue;
+            }
             String clazz = normalizeClass(t.Potentiality__c);
             if (!isAll && clazz != normalizedFilter) {
+                continue;
+            }
+            if (
+                normalizedRecordType != null
+                && (t.Account__r == null || t.Account__r.RecordType.DeveloperName != normalizedRecordType)
+            ) {
+                continue;
+            }
+            if (
+                normalizedSubtype != null
+                && (t.Account__r == null || t.Account__r.Institution_Type__c != normalizedSubtype)
+            ) {
+                continue;
+            }
+            Account_Territory_Fields__c atfFilter = t.Account_Territory_Fields__r;
+            String hcpClass = atfFilter != null ? atfFilter.HCP_Classification__c : null;
+            if (normalizedHcpClass != null && (hcpClass == null || hcpClass.toUpperCase() != normalizedHcpClass)) {
+                continue;
+            }
+            if (brickFilter != null && (t.Account__r == null || t.Account__r.Brick__c != brickFilter)) {
                 continue;
             }
 
@@ -303,13 +597,23 @@ public with sharing class FieldRepHomeController {
             row.reachPercent = PercentFieldHelper.toDisplayScale(t.Reach_Percent__c);
             row.frequencyStatus = t.Frequency_Status__c;
             row.isVisited = t.Is_Visited__c;
+            row.recordTypeDeveloperName = t.Account__r != null ? t.Account__r.RecordType.DeveloperName : null;
+            row.recordTypeLabel = t.Account__r != null ? t.Account__r.RecordType.Name : null;
+            row.accountSubtype = t.Account__r != null ? t.Account__r.Institution_Type__c : null;
+            row.hcpClassification = hcpClass;
+            row.brickId = t.Account__r != null ? t.Account__r.Brick__c : null;
+            if (t.Account__r != null && t.Account__r.Brick__r != null) {
+                row.brickName = String.isNotBlank(t.Account__r.Brick__r.Brick_Code__c)
+                    ? t.Account__r.Brick__r.Brick_Code__c + ' — ' + t.Account__r.Brick__r.Name
+                    : t.Account__r.Brick__r.Name;
+            }
 
             rows.add(row);
         }
         return rows;
     }
 
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static FieldPlannerController.PlannerPayload getTodayPlan(Id contextUserId, Date planDate) {
         Id resolvedUserId = FieldPlannerController.resolveViewerContextUserId(contextUserId);
         // Match Field Rep Planner: use the client calendar date when provided so visit
@@ -365,6 +669,19 @@ public with sharing class FieldRepHomeController {
             LIMIT 200
         ];
 
+        if (candidateTargets.isEmpty()) {
+            return new List<NextBestCustomerRow>();
+        }
+
+        Set<Id> scopedAccountIds = selectedTerritoryAccountIds(resolvedUserId);
+        List<Employee_Time_Card_Account_Target__c> scopedTargets =
+            new List<Employee_Time_Card_Account_Target__c>();
+        for (Employee_Time_Card_Account_Target__c t : candidateTargets) {
+            if (isInSelectedTerritory(t.Account__c, scopedAccountIds)) {
+                scopedTargets.add(t);
+            }
+        }
+        candidateTargets = scopedTargets;
         if (candidateTargets.isEmpty()) {
             return new List<NextBestCustomerRow>();
         }
@@ -438,6 +755,8 @@ public with sharing class FieldRepHomeController {
                 score -= 50;
             }
             row.score = score;
+            row.urgency = resolveNbcUrgency(row.visitGap, calculatedClass);
+            row.description = resolveNbcDescription(row, calculatedClass);
 
             ranked.add(row);
         }
@@ -886,7 +1205,7 @@ public with sharing class FieldRepHomeController {
         Integer workingDaysInMonth = countWorkingDaysInRange(workingDays, monthStart, monthEnd);
         if (
             timeCard != null
-            && hasAccessibleField(Employee_Time_Card__c.SObjectType, 'Visit_Target__c')
+            && PharmacySalesFieldSupport.hasField(Employee_Time_Card__c.SObjectType, 'Visit_Target__c')
             && timeCard.Visit_Target__c != null
             && timeCard.Visit_Target__c > 0
             && workingDaysInMonth > 0
@@ -934,12 +1253,12 @@ public with sharing class FieldRepHomeController {
             return false;
         }
         if (
-            hasAccessibleField(Employee_Time_Card_Day_Entry__c.SObjectType, 'Day_Definition__c')
+            PharmacySalesFieldSupport.hasField(Employee_Time_Card_Day_Entry__c.SObjectType, 'Day_Definition__c')
             && entry.Day_Definition__c == 'Weekend Day'
         ) {
             return false;
         }
-        if (hasAccessibleField(Employee_Time_Card_Day_Entry__c.SObjectType, 'Calendar_Working_Days__c')) {
+        if (PharmacySalesFieldSupport.hasField(Employee_Time_Card_Day_Entry__c.SObjectType, 'Calendar_Working_Days__c')) {
             return valueOrZero(entry.Calendar_Working_Days__c) > 0;
         }
         return entry.Date__c != null && isWeekday(entry.Date__c);
@@ -1023,13 +1342,13 @@ public with sharing class FieldRepHomeController {
     }
 
     private static void addDayEntryFieldIfPresent(List<String> fields, String fieldApiName) {
-        if (hasAccessibleField(Employee_Time_Card_Day_Entry__c.SObjectType, fieldApiName)) {
+        if (PharmacySalesFieldSupport.hasField(Employee_Time_Card_Day_Entry__c.SObjectType, fieldApiName)) {
             fields.add(fieldApiName);
         }
     }
 
     private static Boolean dayEntryHasCheckInField() {
-        return hasAccessibleField(
+        return PharmacySalesFieldSupport.hasField(
             Employee_Time_Card_Day_Entry__c.SObjectType,
             'Check_In_Time__c'
         );
@@ -1047,7 +1366,7 @@ public with sharing class FieldRepHomeController {
 
     private static Employee_Time_Card__c getTimeCardForMonth(Id employeeId, Date monthStart) {
         List<String> fields = new List<String>{ 'Id', 'Time_Card_Month_Start_Date__c', 'Time_Card_Month_End_Date__c' };
-        if (hasAccessibleField(Employee_Time_Card__c.SObjectType, 'Visit_Target__c')) {
+        if (PharmacySalesFieldSupport.hasField(Employee_Time_Card__c.SObjectType, 'Visit_Target__c')) {
             fields.add('Visit_Target__c');
         }
 
@@ -1113,7 +1432,7 @@ public with sharing class FieldRepHomeController {
     private static Employee_Time_Card__c getCurrentTimeCard(Id employeeId) {
         Date monthStart = Date.today().toStartOfMonth();
         List<Employee_Time_Card__c> cards = [
-            SELECT Id
+            SELECT Id, Time_Card_Month_Start_Date__c, Time_Card_Month_End_Date__c
             FROM Employee_Time_Card__c
             WHERE Employee__c = :employeeId
                 AND Time_Card_Month_Start_Date__c = :monthStart
@@ -1140,6 +1459,137 @@ public with sharing class FieldRepHomeController {
         }
     }
 
+    private static Decimal countPlannedVisitsForMonth(
+        Id userId,
+        List<Employee_Time_Card_Account_Target__c> targets,
+        Set<Id> scopedAccountIds,
+        Employee_Time_Card__c timeCard
+    ) {
+        if (targets == null || targets.isEmpty() || timeCard == null) {
+            return 0;
+        }
+        Date monthStart = timeCard.Time_Card_Month_Start_Date__c;
+        Date monthEnd = timeCard.Time_Card_Month_End_Date__c;
+        if (monthStart == null || monthEnd == null) {
+            return 0;
+        }
+
+        Set<Id> inPlanAccountIds = new Set<Id>();
+        for (Employee_Time_Card_Account_Target__c target : targets) {
+            if (isInSelectedTerritory(target.Account__c, scopedAccountIds)) {
+                inPlanAccountIds.add(target.Account__c);
+            }
+        }
+        if (inPlanAccountIds.isEmpty()) {
+            return 0;
+        }
+
+        return [
+            SELECT COUNT()
+            FROM Visit__c
+            WHERE
+                Account__c IN :inPlanAccountIds
+                AND Assigned_To__c = :userId
+                AND Visit_Date__c >= :monthStart
+                AND Visit_Date__c <= :monthEnd
+                AND Status__c IN ('Draft', 'Scheduled')
+            WITH USER_MODE
+        ];
+    }
+
+    private static Decimal computeRemainingCalls(
+        List<Employee_Time_Card_Account_Target__c> targets,
+        Set<Id> scopedAccountIds
+    ) {
+        Decimal remaining = 0;
+        for (Employee_Time_Card_Account_Target__c t : targets) {
+            if (!isInSelectedTerritory(t.Account__c, scopedAccountIds)) {
+                continue;
+            }
+            Decimal gap = valueOrZero(t.Target_Visit_Frequency__c) - valueOrZero(t.Actual_Visits__c);
+            if (gap > 0) {
+                remaining += gap;
+            }
+        }
+        return remaining;
+    }
+
+    private static HomeFilterOption option(String label, String value) {
+        HomeFilterOption row = new HomeFilterOption();
+        row.label = label;
+        row.value = value;
+        return row;
+    }
+
+    private static List<String> sortedStrings(Set<String> values) {
+        List<String> rows = new List<String>(values);
+        rows.sort();
+        return rows;
+    }
+
+    private static List<String> sortedClassifications(Set<String> values) {
+        List<String> rows = new List<String>(values);
+        rows.sort(new ClassificationCodeComparator());
+        return rows;
+    }
+
+    private static String resolveNbcUrgency(Decimal visitGap, String calculatedClass) {
+        Decimal gap = valueOrZero(visitGap);
+        String clazz = normalizeClass(calculatedClass);
+        if (gap >= 3 || (clazz == 'A' && gap >= 2)) {
+            return 'High';
+        }
+        if (gap >= 2 || clazz == 'A') {
+            return 'Medium';
+        }
+        return 'Low';
+    }
+
+    private static String resolveNbcDescription(NextBestCustomerRow row, String calculatedClass) {
+        List<String> parts = new List<String>();
+        Decimal gap = Math.max(0, valueOrZero(row.visitGap));
+        if (gap > 0) {
+            parts.add(gap == 1 ? '1 call behind plan' : Integer.valueOf(gap.intValue()) + ' calls behind plan');
+        }
+        if (String.isNotBlank(calculatedClass)) {
+            parts.add('Class ' + calculatedClass);
+        }
+        if (row.planned != true) {
+            parts.add('Not yet planned this week');
+        } else if (row.plannedToday == true) {
+            parts.add('Already planned today');
+        }
+        return parts.isEmpty() ? 'Priority follow-up account' : String.join(parts, ' · ');
+    }
+
+    private class ClassificationCodeComparator implements System.Comparator<String> {
+        public Integer compare(String a, String b) {
+            Integer rankA = classificationCodeRank(a);
+            Integer rankB = classificationCodeRank(b);
+            if (rankA != rankB) {
+                return rankA - rankB;
+            }
+            return (a == null ? '' : a).compareTo(b == null ? '' : b);
+        }
+    }
+
+    private static Integer classificationCodeRank(String code) {
+        if (String.isBlank(code)) {
+            return 99;
+        }
+        String letter = code.left(1).toUpperCase();
+        Integer sub = 0;
+        if (code.length() > 1) {
+            try {
+                sub = Integer.valueOf(code.substring(1));
+            } catch (Exception e) {
+                sub = 0;
+            }
+        }
+        Integer letterRank = letter == 'A' ? 0 : (letter == 'B' ? 10 : (letter == 'C' ? 20 : 30));
+        return letterRank + sub;
+    }
+
     private static HomeMetrics emptyHomeMetrics() {
         HomeMetrics result = new HomeMetrics();
         result.visitCoveragePercent = 0;
@@ -1147,6 +1597,10 @@ public with sharing class FieldRepHomeController {
         result.lfPercentTotal = 0;
         result.rfPercentTotal = 0;
         result.mfPercentTotal = 0;
+        result.actualVisitsTotal = 0;
+        result.targetVisitsTotal = 0;
+        result.plannedVisitsTotal = 0;
+        result.remainingCalls = 0;
 
         List<ClassificationMetrics> byClass = new List<ClassificationMetrics>();
         for (String clazz : new List<String>{ 'A', 'B', 'C' }) {
@@ -1170,12 +1624,39 @@ public with sharing class FieldRepHomeController {
         throw new AuraHandledException('You cannot view home metrics for other users.');
     }
 
-    private static Boolean hasAccessibleField(Schema.SObjectType sobjectType, String fieldApiName) {
-        if (sobjectType == null || String.isBlank(fieldApiName)) {
-            return false;
+    private static Set<Id> selectedTerritoryAccountIds(Id userId) {
+        if (userId != UserInfo.getUserId() || !TerritoryContextService.hasSelectedTerritory()) {
+            return null;
         }
-        Schema.SObjectField fieldToken = sobjectType.getDescribe().fields.getMap().get(fieldApiName.toLowerCase());
-        return fieldToken != null && fieldToken.getDescribe().isAccessible();
+        Set<Id> territoryIds = TerritoryHierarchyService.expandTerritoryHierarchy(
+            TerritoryContextService.getEffectiveTerritoryIds(userId)
+        );
+        if (territoryIds.isEmpty()) {
+            return new Set<Id>();
+        }
+        Set<String> territoryKeys = new Set<String>();
+        for (Id territoryId : territoryIds) {
+            territoryKeys.add(String.valueOf(territoryId));
+        }
+        Set<Id> accountIds = new Set<Id>();
+        for (Account_Territory_Fields__c atf : [
+            SELECT Account__c
+            FROM Account_Territory_Fields__c
+            WHERE
+                Territory2_Id__c IN :territoryKeys
+                AND Is_Active__c = TRUE
+                AND Account__c != NULL
+            WITH SYSTEM_MODE
+        ]) {
+            accountIds.add(atf.Account__c);
+        }
+        return accountIds;
+    }
+
+    private static Boolean isInSelectedTerritory(Id accountId, Set<Id> scopedAccountIds) {
+        if (scopedAccountIds == null) {
+            return true;
+        }
+        return accountId != null && scopedAccountIds.contains(accountId);
     }
 }
-

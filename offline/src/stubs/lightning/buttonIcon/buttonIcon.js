@@ -9,14 +9,11 @@ export default class ButtonIcon extends LightningElement {
     @api disabled = false;
 
     get glyph() {
-        if (!this.iconName) return '🔘';
+        if (!this.iconName) return '•';
         if (this.iconName.includes('left')) return '◀';
         if (this.iconName.includes('right')) return '▶';
         if (this.iconName.includes('close')) return '✕';
-        if (this.iconName.includes('filter')) return '⚡';
-        if (this.iconName.includes('pin')) return '📍';
         if (this.iconName.includes('add')) return '+';
-        if (this.iconName.includes('delete')) return '🗑';
         if (this.iconName.includes('edit')) return '✎';
         return '•';
     }

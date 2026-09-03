@@ -480,6 +480,7 @@ export default class FieldRepPlanner extends NavigationMixin(LightningElement) {
     suppressVisitClick = false;
     touchDragGhostEl;
     touchDropHighlightEl;
+    touchDropHighlightClass;
     _handleDocumentTouchMove;
     _handleDocumentTouchEnd;
 
@@ -824,7 +825,25 @@ export default class FieldRepPlanner extends NavigationMixin(LightningElement) {
     }
 
     get accountChipDraggable() {
-        return this.isReadOnlyPlannerView ? 'false' : 'true';
+        if (this.isReadOnlyPlannerView) {
+            return 'false';
+        }
+        // On touch / coarse-pointer devices the native HTML5 draggable attribute
+        // hijacks the gesture (starts a native drag, swallows touchmove), so the
+        // custom touch-drag never activates. Disable it there and let the touch
+        // handlers drive; keep native drag for mouse (fine-pointer) devices.
+        if (this.isCoarsePointer) {
+            return 'false';
+        }
+        return 'true';
+    }
+
+    get isCoarsePointer() {
+        return (
+            typeof window !== 'undefined' &&
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(pointer: coarse)').matches
+        );
     }
 
     get hasRouteEstCost() {
@@ -2985,6 +3004,23 @@ export default class FieldRepPlanner extends NavigationMixin(LightningElement) {
         const wasActive = this.touchDragState.active;
         try {
             if (wasActive && touch) {
+                // Account → list (collection) drop. Native ondrop never fires on
+                // touch, so resolve the collection target here before the calendar.
+                if (this.dragPayload?.kind === DRAG_TYPE_ACCOUNT) {
+                    const collectionId = this.findCollectionTargetIdAtPoint(
+                        touch.clientX,
+                        touch.clientY
+                    );
+                    if (collectionId) {
+                        const payload = this.dragPayload;
+                        const accountId = payload.accountId || payload.account?.id;
+                        const account = this.resolveAccountById(accountId, payload.account);
+                        if (account) {
+                            this.addAccountToCollection(collectionId, account);
+                        }
+                        return;
+                    }
+                }
                 let start = null;
                 const slot = this.findCalendarSlotAtPoint(touch.clientX, touch.clientY);
                 if (slot) {
@@ -3073,19 +3109,107 @@ export default class FieldRepPlanner extends NavigationMixin(LightningElement) {
         return element?.closest?.('[data-day-key][data-minutes]') || null;
     }
 
+    elementAtPoint(x, y) {
+        if (this.touchDragGhostEl) {
+            this.touchDragGhostEl.style.display = 'none';
+        }
+        let element = null;
+        if (this.template?.elementFromPoint) {
+            element = this.template.elementFromPoint(x, y);
+        }
+        if (!element) {
+            element = document.elementFromPoint(x, y);
+        }
+        if (this.touchDragGhostEl) {
+            this.touchDragGhostEl.style.display = '';
+        }
+        return element;
+    }
+
+    findCollectionTargetElementAtPoint(x, y) {
+        // 1. Try the precise point hit-test first.
+        const element = this.elementAtPoint(x, y);
+        if (element?.closest) {
+            const chip = element.closest('.collection-chip[data-collection-id]');
+            if (chip) {
+                return chip;
+            }
+            const zone = element.closest('.collection-drop-zone');
+            if (zone && this.selectedCollectionId) {
+                return zone;
+            }
+        }
+        // 2. Geometric fallback — robust to shadow DOM boundaries and the drag
+        //    ghost overlapping the point. Small tolerance makes small chips easy
+        //    to hit on touch.
+        const TOL = 10;
+        const hits = (el) => {
+            if (!el) {
+                return false;
+            }
+            const r = el.getBoundingClientRect();
+            if (!r.width && !r.height) {
+                return false;
+            }
+            return (
+                x >= r.left - TOL &&
+                x <= r.right + TOL &&
+                y >= r.top - TOL &&
+                y <= r.bottom + TOL
+            );
+        };
+        const chips = this.template.querySelectorAll('.collection-chip[data-collection-id]');
+        for (const chip of chips) {
+            if (hits(chip)) {
+                return chip;
+            }
+        }
+        if (this.selectedCollectionId) {
+            const zone = this.template.querySelector('.collection-drop-zone');
+            if (hits(zone)) {
+                return zone;
+            }
+        }
+        return null;
+    }
+
+    findCollectionTargetIdAtPoint(x, y) {
+        const el = this.findCollectionTargetElementAtPoint(x, y);
+        if (!el) {
+            return null;
+        }
+        return el.dataset?.collectionId || this.selectedCollectionId || null;
+    }
+
     highlightTouchDropTarget(x, y) {
         this.clearTouchDropHighlight();
         const slot = this.findCalendarSlotAtPoint(x, y);
         if (slot) {
             slot.classList.add('calendar-drop-target');
             this.touchDropHighlightEl = slot;
+            this.touchDropHighlightClass = 'calendar-drop-target';
+            return;
+        }
+        if (this.dragPayload?.kind === DRAG_TYPE_ACCOUNT) {
+            const target = this.findCollectionTargetElementAtPoint(x, y);
+            if (target) {
+                const cls = target.classList.contains('collection-drop-zone')
+                    ? 'collection-drop-zone-active'
+                    : 'collection-chip-drop-target';
+                target.classList.add(cls);
+                this.touchDropHighlightEl = target;
+                this.touchDropHighlightClass = cls;
+            }
         }
     }
 
     clearTouchDropHighlight() {
         if (this.touchDropHighlightEl) {
-            this.touchDropHighlightEl.classList.remove('calendar-drop-target');
+            this.touchDropHighlightEl.classList.remove(
+                this.touchDropHighlightClass || 'calendar-drop-target'
+            );
             this.touchDropHighlightEl = undefined;
+            this.touchDropHighlightClass = undefined;
         }
     }
 

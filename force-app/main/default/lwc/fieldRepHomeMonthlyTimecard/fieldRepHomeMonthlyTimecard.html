@@ -1,0 +1,35 @@
+<template>
+    <section class="timecard-section" aria-label="Monthly timecard">
+        <header class="timecard-header">
+            <div>
+                <h3 class="section-label">Monthly Timecard</h3>
+                <p class="timecard-subtitle">{monthLabel}</p>
+            </div>
+        </header>
+
+        <template if:true={isLoading}>
+            <div class="timecard-loading">
+                <lightning-spinner alternative-text="Loading timecard" size="small"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+            <template if:true={hasTiles}>
+                <div class="timecard-grid">
+                    <template for:each={summary.tiles} for:item="tile">
+                        <article key={tile.id} class="timecard-tile">
+                            <div class="tile-label-row">
+                                <span class="tile-label">{tile.label}</span>
+                                <lightning-helptext content={tile.help}></lightning-helptext>
+                            </div>
+                            <span class="tile-value">{tile.value}</span>
+                        </article>
+                    </template>
+                </div>
+            </template>
+            <template if:false={hasTiles}>
+                <p class="timecard-empty">No timecard data for this month yet.</p>
+            </template>
+        </template>
+    </section>
+</template>

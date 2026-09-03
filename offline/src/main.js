@@ -1,8 +1,11 @@
 import '@lwc/synthetic-shadow';
 import { createElement } from 'lwc';
 import FieldRepHomeMetrics from 'c/fieldRepHomeMetrics';
+import FieldRepHomeMonthlyTimecard from 'c/fieldRepHomeMonthlyTimecard';
 import FieldRepHomeTodayPlan from 'c/fieldRepHomeTodayPlan';
 import FieldRepHomeNextBestCustomer from 'c/fieldRepHomeNextBestCustomer';
+import HomeOfficeMessages from 'c/homeOfficeMessages';
+import FieldRepHomeClmPrefetch from 'c/fieldRepHomeClmPrefetch';
 import FieldRepPlanner from 'c/fieldRepPlanner';
 import AccountsTab from 'c/accountsTab';
 import TimeOffSubmission from 'c/timeOffSubmission';
@@ -18,6 +21,7 @@ const REFRESH_TOKEN_KEY = 'zeta.pwa.sfRefreshToken';
 const INSTANCE_URL_KEY = 'zeta.pwa.sfInstanceUrl';
 const HOME_TAB_KEY = 'Field_Rep_Home_App';
 const TIME_OFF_TAB_KEY = 'Request_Time_Off';
+const CLM_TAB_KEY = 'CLM_Presentations';
 let currentTab = HOME_TAB_KEY;
 let appTabs = [];
 
@@ -384,14 +388,23 @@ function mountHomeView() {
     if (!homeRoot) {
         return;
     }
+    if (!homeRoot.querySelector('c-home-office-messages')) {
+        homeRoot.appendChild(createElement('c-home-office-messages', { is: HomeOfficeMessages }));
+    }
     if (!homeRoot.querySelector('c-field-rep-home-metrics')) {
         homeRoot.appendChild(createElement('c-field-rep-home-metrics', { is: FieldRepHomeMetrics }));
+    }
+    if (!homeRoot.querySelector('c-field-rep-home-monthly-timecard')) {
+        homeRoot.appendChild(createElement('c-field-rep-home-monthly-timecard', { is: FieldRepHomeMonthlyTimecard }));
     }
     if (!homeRoot.querySelector('c-field-rep-home-today-plan')) {
         homeRoot.appendChild(createElement('c-field-rep-home-today-plan', { is: FieldRepHomeTodayPlan }));
     }
     if (!homeRoot.querySelector('c-field-rep-home-next-best-customer')) {
         homeRoot.appendChild(createElement('c-field-rep-home-next-best-customer', { is: FieldRepHomeNextBestCustomer }));
+    }
+    if (!homeRoot.querySelector('c-field-rep-home-clm-prefetch')) {
+        homeRoot.appendChild(createElement('c-field-rep-home-clm-prefetch', { is: FieldRepHomeClmPrefetch }));
     }
 }
 
@@ -571,6 +584,15 @@ function buildAppTabs() {
                 tabs.push({
                     key: TIME_OFF_TAB_KEY,
                     label: 'Request Time Off',
+                    type: 'TabFlexiPage',
+                    iconUrl: null
+                });
+            }
+            // Always surface the CLM Presentations tab (hard-coded PWA feature).
+            if (!tabs.some((t) => t.key === CLM_TAB_KEY)) {
+                tabs.push({
+                    key: CLM_TAB_KEY,
+                    label: 'CLM Presentations',
                     type: 'TabFlexiPage',
                     iconUrl: null
                 });
@@ -758,7 +780,7 @@ function setupSessionBar(token) {
         const capacitorDetected = isCapacitor();
         const callbackUrl = OAUTH_CONFIG.callbackUrl;
         debugEl.innerHTML = `
-            <div>Capacitor: ${capacitorDetected ? '✅ YES' : '❌ NO'}</div>
+            <div>Capacitor: ${capacitorDetected ? 'YES' : 'NO'}</div>
             <div>Callback: ${callbackUrl}</div>
             <div style="margin-top: 4px; font-size: 9px;">
                 <a href="#" onclick="localStorage.setItem('forceCapacitor','true');location.reload();return false;" style="color: #0176d3;">Force Capacitor</a>

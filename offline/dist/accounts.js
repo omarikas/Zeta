@@ -255,7 +255,9 @@ function renderSummary() {
 
 function navigateToAccount(accountId) {
     if (accountId) {
-        window.location.href = `/visits.html?accountId=${accountId}`;
+        // Open the generic UI API record view (page-layout order), same as every
+        // other object. See record.js.
+        window.location.href = `/record.html?object=Account&recordId=${encodeURIComponent(accountId)}`;
     }
 }
 

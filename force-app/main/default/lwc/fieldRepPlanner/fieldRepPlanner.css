@@ -616,6 +616,8 @@
     border: 1px solid var(--slds-g-color-border-base-1, #ddd);
     cursor: grab;
     user-select: none;
+    /* Claim touch gestures so a drag isn't hijacked by list scroll (touchcancel). */
+    touch-action: none;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 

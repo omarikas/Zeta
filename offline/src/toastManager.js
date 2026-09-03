@@ -29,10 +29,10 @@ export function showToast({ title = '', message = '', variant = 'info', mode = '
     const variantClass = `toast-${variant || 'info'}`;
     toastItem.className = `toast-item ${variantClass}`;
 
-    let iconSymbol = 'ℹ️';
+    let iconSymbol = 'i';
     if (variant === 'success') iconSymbol = '✓';
     else if (variant === 'error') iconSymbol = '✕';
-    else if (variant === 'warning') iconSymbol = '⚠️';
+    else if (variant === 'warning') iconSymbol = '!';
 
     toastItem.innerHTML = `
         <span class="toast-icon" aria-hidden="true">${iconSymbol}</span>

@@ -38,61 +38,6 @@ global with sharing class PlannerMobileRestService {
     public Map<String, String> cursors;
   }
 
-  /**
-   * Extracts the Bearer token from the Authorization header of the request.
-   * Returns null if no valid token is found.
-   */
-  private static String extractBearerToken(RestRequest req) {
-    String authHeader = req.headers.get('Authorization');
-    if (String.isBlank(authHeader)) {
-      return null;
-    }
-    if (authHeader.startsWith('Bearer ')) {
-      return authHeader.substring(7).trim();
-    }
-    return null;
-  }
-
-  /**
-   * Makes an HTTP callout to Salesforce REST API using the provided access token.
-   * @param endpoint The full URL to call
-   * @param method The HTTP method (GET, POST, PUT, DELETE, PATCH)
-   * @param accessToken The Bearer token for authentication
-   * @param body The request body (for POST/PUT/PATCH)
-   * @return The HttpResponse from the callout
-   */
-  private static HttpResponse callSalesforceRest(
-    String endpoint,
-    String method,
-    String accessToken,
-    String body
-  ) {
-    HttpRequest req = new HttpRequest();
-    req.setEndpoint(endpoint);
-    req.setMethod(method);
-    req.setHeader('Authorization', 'Bearer ' + accessToken);
-    req.setHeader('Content-Type', 'application/json');
-    req.setTimeout(120000);
-
-    if (String.isNotBlank(body) && (method == 'POST' || method == 'PUT' || method == 'PATCH')) {
-      req.setBody(body);
-    }
-
-    Http http = new Http();
-    return http.send(req);
-  }
-
-  /**
-   * Gets the Salesforce instance URL from the request or defaults to current org.
-   */
-  private static String getSalesforceInstanceUrl(RestRequest req) {
-    String instanceUrl = req.headers.get('X-SF-Instance-URL');
-    if (String.isNotBlank(instanceUrl)) {
-      return instanceUrl.replace('/', '');
-    }
-    return URL.getOrgDomainUrl().toExternalForm().replace('https://', '').replace('/', '');
-  }
-
   @HttpGet
   global static void doGet() {
     RestRequest req = RestContext.request;
@@ -214,6 +159,14 @@ global with sharing class PlannerMobileRestService {
         );
         return;
       }
+      if (path == 'home/monthly-timecard') {
+        writeJson(
+          res,
+          200,
+          FieldRepHomeController.getMonthlyTimecardSummary(blankToNullId(params.get('contextUserId')))
+        );
+        return;
+      }
       if (path == 'accounts-tab/page') {
         writeJson(res, 200, AccountsTabController.getAccountsTabPage(
           params.get('scope'),
@@ -226,7 +179,9 @@ global with sharing class PlannerMobileRestService {
           toInteger(params.get('pageSize'), 10),
           parseDate(params.get('monthStart')),
           blankToNullId(params.get('contextUserId')),
-          commaSeparatedToList(params.get('accountIds'))
+          commaSeparatedToList(params.get('accountIds')),
+          blankToNullId(params.get('brickId')),
+          params.get('specialtyFilter')
         ));
         return;
       }
@@ -242,17 +197,14 @@ global with sharing class PlannerMobileRestService {
           toInteger(params.get('pageSize'), 5),
           parseDate(params.get('monthStart')),
           blankToNullId(params.get('contextUserId')),
-          commaSeparatedToList(params.get('accountIds'))
+          commaSeparatedToList(params.get('accountIds')),
+          blankToNullId(params.get('brickId')),
+          params.get('specialtyFilter')
         ));
         return;
       }
       if (path == 'accounts-tab/record-type-options') {
         writeJson(res, 200, AccountsTabController.getAccountsTabRecordTypeOptions());
-        return;
-      }
-      if (path.startsWith('accounts/')) {
-        Id accountId = (Id) path.substringAfter('accounts/');
-        writeJson(res, 200, buildAccountDetails(accountId));
         return;
       }
       writeJson(res, 404, new ErrorResponse('Unknown GET path: ' + path));
@@ -318,7 +270,9 @@ global with sharing class PlannerMobileRestService {
         pageSize,
         monthStart,
         contextUserId,
-        accountIds
+        accountIds,
+        null,
+        null
       );
     } catch (Exception e) {
       throw new AuraHandledException(e.getMessage());
@@ -351,7 +305,9 @@ global with sharing class PlannerMobileRestService {
         pageSize,
         monthStart,
         contextUserId,
-        accountIds
+        accountIds,
+        null,
+        null
       );
     } catch (Exception e) {
       throw new AuraHandledException(e.getMessage());
@@ -546,10 +502,9 @@ global with sharing class PlannerMobileRestService {
         (String) payload.get('comments'),
         (String) payload.get('stage')
       );
+    } else {
+      throw new AuraHandledException('Unsupported outbox action: ' + action.actionType);
     }
-    // Unknown action types are skipped so future queue items do not block drain.
-    // Throwing here is invalid outside Aura/VF context (REST), which surfaces as a
-    // LimitException; unknown types are best ignored instead.
   }
 
   private static Map<String, Object> buildUiMetadata() {
@@ -703,7 +658,14 @@ global with sharing class PlannerMobileRestService {
       'metrics' => FieldRepHomeController.getHomeMetrics(contextUserId),
       'gamification' => FieldRepHomeController.getPerformanceGamification(contextUserId, monthStart),
       'rankings' => FieldRepHomeController.getPerformanceRankings(contextUserId),
-      'accountCoverageRows' => FieldRepHomeController.getAccountCoverageRows(contextUserId, 'All'),
+      'accountCoverageRows' => FieldRepHomeController.getAccountCoverageRows(
+        contextUserId,
+        'All',
+        null,
+        null,
+        null,
+        null
+      ),
       'messages' => messages == null ? new List<Object>() : messages,
       'todayVisits' => todayPlan == null || todayPlan.visits == null
         ? new List<Object>()
@@ -739,35 +701,6 @@ global with sharing class PlannerMobileRestService {
     return new Map<String, Object>{
       'userId' => resolvedUserId,
       'rows' => rows == null ? new List<Object>() : rows
-    };
-  }
-
-  private static Map<String, Object> buildAccountDetails(Id accountId) {
-    if (accountId == null) {
-      return new Map<String, Object>{ 'error' => 'Account ID is required' };
-    }
-    List<Account> accounts = [
-      SELECT Id, Name, Phone,
-             ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry,
-             RecordType.Name
-      FROM Account
-      WHERE Id = :accountId
-      LIMIT 1
-    ];
-    if (accounts.isEmpty()) {
-      return new Map<String, Object>{ 'error' => 'Account not found' };
-    }
-    Account acct = accounts[0];
-    return new Map<String, Object>{
-      'id' => acct.Id,
-      'name' => acct.Name,
-      'recordTypeName' => acct.RecordType?.Name,
-      'phone' => acct.Phone,
-      'shippingStreet' => acct.ShippingStreet,
-      'shippingCity' => acct.ShippingCity,
-      'shippingState' => acct.ShippingState,
-      'shippingPostalCode' => acct.ShippingPostalCode,
-      'shippingCountry' => acct.ShippingCountry
     };
   }
 
