@@ -1,5 +1,5 @@
 const CACHE_NAME = 'zeta-field-pwa-v2';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/accounts.html', '/accounts.js', '/accounts.css', '/visits.html', '/visits.js', '/visits.css', '/shell.css'];
+const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/accounts.html', '/accounts.js', '/accounts.css', '/account.html', '/account.js', '/account.css', '/visits.html', '/visits.js', '/visits.css', '/shell.css'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -18,16 +18,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (url.pathname.startsWith('/services/')) {
-        if (navigator.onLine === false) {
-            event.respondWith(
-                Promise.resolve(
-                    new Response(JSON.stringify({ message: 'Offline' }), {
-                        status: 503,
-                        headers: { 'Content-Type': 'application/json' }
-                    })
-                )
-            );
-        }
+        // Note: navigator.onLine is unreliable in Capacitor WebView
+        // Always try to fetch - let the network failure handle real offline cases
         return;
     }
     if (event.request.method !== 'GET') {

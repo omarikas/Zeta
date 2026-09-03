@@ -24,7 +24,8 @@ export default class FieldRepHomeClmPrefetch extends LightningElement {
   unregisterListener;
 
   connectedCallback() {
-    this.isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+    // Manual mode only - no auto-detection of online/offline status
+    this.isOffline = false;
     this.unregisterListener = registerOfflineListener((status) => {
       if (status?.pending != null) {
         this.pendingCount = status.pending;
@@ -39,10 +40,6 @@ export default class FieldRepHomeClmPrefetch extends LightningElement {
         this.statusLabel = 'Offline sync paused — will retry when online';
       }
     });
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', this.handleConnectivity);
-      window.addEventListener('offline', this.handleConnectivity);
-    }
     startSyncService();
     this.refreshPending();
     this.schedulePrefetch();
@@ -52,19 +49,7 @@ export default class FieldRepHomeClmPrefetch extends LightningElement {
     if (this.unregisterListener) {
       this.unregisterListener();
     }
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('online', this.handleConnectivity);
-      window.removeEventListener('offline', this.handleConnectivity);
-    }
   }
-
-  handleConnectivity = () => {
-    this.isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-    if (!this.isOffline) {
-      startSyncService();
-    }
-    this.refreshPending();
-  };
 
   async refreshPending() {
     try {
@@ -90,7 +75,9 @@ export default class FieldRepHomeClmPrefetch extends LightningElement {
   }
 
   async runPrefetch() {
-    if (!navigator.onLine || this.isPrefetching) {
+    // Note: navigator.onLine is unreliable in Capacitor WebView
+    // Always try to prefetch - let network failures be handled gracefully
+    if (this.isPrefetching) {
       return;
     }
     this.isPrefetching = true;

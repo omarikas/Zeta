@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176d3" />
+    <title>List — Pharma Field PWA</title>
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="account.css" />
+    <link rel="stylesheet" href="list.css" />
+</head>
+<body>
+    <p id="list-error" class="error-banner" style="display:none" role="alert"></p>
+    <div id="list-loading" class="loading-msg" style="display:none">Loading records…</div>
+
+    <div id="list-result" style="display:none">
+        <div class="list-table-wrap">
+            <table id="list-table" class="list-table">
+                <thead id="list-thead"></thead>
+                <tbody id="list-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module" src="list.js"></script>
+</body>
+</html>

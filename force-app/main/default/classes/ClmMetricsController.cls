@@ -21,6 +21,8 @@ public with sharing class ClmMetricsController {
         @AuraEnabled public Integer slideCount;
         @AuraEnabled public String tags;
         @AuraEnabled public String contentDocumentId;
+        @AuraEnabled public String contentVersionId;
+        @AuraEnabled public Integer contentSize;
         @AuraEnabled public Datetime lastModifiedDate;
         @AuraEnabled public List<SequenceDetail> sequences;
     }
@@ -197,7 +199,39 @@ public with sharing class ClmMetricsController {
             prefetch.sequences = getSequencesForPresentation(pres.Id);
             results.add(prefetch);
         }
+
+        Map<Id, ContentVersion> versionsByDocument = new Map<Id, ContentVersion>();
+        List<Id> docIds = new List<Id>(pluckContentDocumentIds(results));
+        if (!docIds.isEmpty()) {
+            for (ContentVersion version : [
+                SELECT Id, ContentDocumentId, ContentSize
+                FROM ContentVersion
+                WHERE ContentDocumentId IN :docIds AND IsLatest = true
+                WITH USER_MODE
+            ]) {
+                versionsByDocument.put(version.ContentDocumentId, version);
+            }
+            for (PresentationPrefetch prefetch : results) {
+                ContentVersion version = versionsByDocument.get(prefetch.contentDocumentId);
+                if (version != null) {
+                    prefetch.contentVersionId = version.Id;
+                    prefetch.contentSize = version.ContentSize != null
+                        ? Integer.valueOf(version.ContentSize)
+                        : null;
+                }
+            }
+        }
         return results;
+    }
+
+    private static Set<Id> pluckContentDocumentIds(List<PresentationPrefetch> results) {
+        Set<Id> ids = new Set<Id>();
+        for (PresentationPrefetch prefetch : results) {
+            if (String.isNotBlank(prefetch.contentDocumentId)) {
+                ids.add((Id) prefetch.contentDocumentId);
+            }
+        }
+        return ids;
     }
 
     @AuraEnabled

@@ -99,6 +99,9 @@ function compileSfdxLwc() {
                     return file;
                 }
             }
+            if (id === '@salesforce/apex') {
+                return path.resolve(root, 'src/apex/refreshApex.js');
+            }
             if (id.startsWith('@salesforce/apex/')) {
                 const parts = id.split('/');
                 const method = parts[parts.length - 1].split('.')[1] || parts[parts.length - 1];
@@ -107,6 +110,20 @@ function compileSfdxLwc() {
                     return specificStub;
                 }
                 return path.resolve(root, 'src/apex/noopApex.js');
+            }
+            if (id.startsWith('@salesforce/schema/')) {
+                const spec = id.slice('@salesforce/schema/'.length);
+                if (spec.startsWith('Time_Off_Request__c')) {
+                    const [objectName, fieldName] = spec.split('.');
+                    const target = fieldName
+                        ? `src/schema/${fieldName}.js`
+                        : `src/schema/${objectName}.js`;
+                    return path.resolve(root, target);
+                }
+                return path.resolve(root, 'src/schema/noopSchema.js');
+            }
+            if (id === 'lightning/uiRecordApi') {
+                return path.resolve(root, 'src/stubs/uiRecordApi.js');
             }
             if (id === 'lightning/navigation') {
                 return path.resolve(root, 'src/stubs/navigation.js');
@@ -135,6 +152,12 @@ function compileSfdxLwc() {
             }
             if (id === '@salesforce/user/Id') {
                 return path.resolve(root, 'src/stubs/userId.js');
+            }
+            if (id === '@salesforce/resourceUrl/jszip') {
+                return path.resolve(root, 'src/stubs/resourceJszip.js');
+            }
+            if (id === '@salesforce/resourceUrl/pdfjs') {
+                return path.resolve(root, 'src/stubs/resourcePdfjs.js');
             }
             if (id.startsWith('@salesforce/resourceUrl/')) {
                 return path.resolve(root, 'src/stubs/leafletUrl.js');

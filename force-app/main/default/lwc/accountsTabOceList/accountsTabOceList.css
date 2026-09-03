@@ -65,7 +65,7 @@
     min-width: 64rem;
     border-collapse: separate;
     border-spacing: 0;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .oce-table thead th {
@@ -89,7 +89,14 @@
     border-bottom: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
     font-size: 0.8125rem;
     color: #181818;
-    overflow: hidden;
+    white-space: nowrap;
+}
+
+.col-account .oce-field-value,
+.col-account .oce-account-link,
+.col-account .oce-meta-line {
+    white-space: normal;
+    min-width: 14rem;
 }
 
 .oce-row:hover td {
@@ -156,10 +163,6 @@
 }
 
 .oce-account-link {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
     font-weight: 650;
     font-size: 0.875rem;
     line-height: 1.3;

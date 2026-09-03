@@ -7,6 +7,8 @@ import {
 
 export const APEX_DOWNLOAD_MAX_BYTES = 4500000;
 
+const DIRECT_DOWNLOAD_API_VERSION = 'v62.0';
+
 async function toOwnedUint8Array(value) {
     if (!value) {
         return null;
@@ -65,20 +67,42 @@ export function buildNativeContentUrl(contentDocumentId, publicContentUrl, pageN
 }
 
 /**
- * Browser fetch to Files redirects to file.force.com and is blocked by CORS
- * from lightning.force.com. Only Apex can return bytes, and only under heap limits.
+ * Streams raw file bytes for decks too large to return through Apex (heap).
+ * Uses the standard REST VersionData endpoint, which returns binary and honors
+ * an OAuth bearer token (offline PWA / Capacitor). In native Lightning the
+ * relative URL is generally unreachable, so callers fall back to an error.
  */
-async function downloadBytesFromNetwork(contentDocumentId, contentSize) {
+async function downloadVersionDataDirect(contentVersionId) {
+    if (!contentVersionId) {
+        throw new Error('Presentation file is missing a content version.');
+    }
+    const restBase = (typeof globalThis !== 'undefined' && globalThis.PLANNER_REST_BASE) || '';
+    const token = (typeof globalThis !== 'undefined' && globalThis.PLANNER_ACCESS_TOKEN) || '';
+    const url = `${String(restBase).replace(/\/$/, '')}/services/data/${DIRECT_DOWNLOAD_API_VERSION}/sobjects/ContentVersion/${encodeURIComponent(contentVersionId)}/VersionData`;
+    const headers = { Accept: 'application/octet-stream' };
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    const response = await fetch(url, {
+        method: 'GET',
+        credentials: token ? 'omit' : 'same-origin',
+        headers
+    });
+    if (!response.ok) {
+        throw new Error(`Unable to download presentation content (HTTP ${response.status}).`);
+    }
+    return response.arrayBuffer();
+}
+
+async function downloadBytesFromNetwork(contentDocumentId, contentSize, options = {}) {
     if (!contentDocumentId) {
         throw new Error('Presentation file is missing.');
     }
+
     if (exceedsApexDownloadLimit(contentSize)) {
-        const mb = (Number(contentSize) / 1048576).toFixed(1);
-        const error = new Error(
-            `This presentation is ${mb} MB and cannot be loaded into the player as raw bytes. Use the native viewer.`
-        );
-        error.code = 'LARGE_FILE';
-        throw error;
+        // Large decks cannot be returned through Apex (heap) - stream the
+        // raw bytes via the standard REST VersionData endpoint instead.
+        return downloadVersionDataDirect(options.contentVersionId);
     }
 
     try {
@@ -117,15 +141,12 @@ export async function getPdfBytes(contentDocumentId, fetchNetwork = true, option
             // Detached or corrupt cache — fall through to network.
         }
     }
-    if (!fetchNetwork || !navigator.onLine) {
+    // Note: navigator.onLine is unreliable in Capacitor WebView
+    // Always try to fetch - let network failures be handled gracefully
+    if (!fetchNetwork) {
         return null;
     }
-    if (exceedsApexDownloadLimit(contentSize)) {
-        const error = new Error('Presentation exceeds Apex download limit.');
-        error.code = 'LARGE_FILE';
-        throw error;
-    }
-    const buffer = await downloadBytesFromNetwork(contentDocumentId, contentSize);
+    const buffer = await downloadBytesFromNetwork(contentDocumentId, contentSize, options);
     const bytes = await toOwnedUint8Array(buffer);
     try {
         await putAsset(assetKey, bytes.slice().buffer, { contentDocumentId, type: 'pdf' });
@@ -152,7 +173,9 @@ export async function getSlideBlob(url, fetchNetwork = true) {
     if (cached?.blob) {
         return cached.blob instanceof Blob ? cached.blob : new Blob([cached.blob]);
     }
-    if (!fetchNetwork || !navigator.onLine) {
+    // Note: navigator.onLine is unreliable in Capacitor WebView
+    // Always try to fetch - let network failures be handled gracefully
+    if (!fetchNetwork) {
         return null;
     }
     // Slide preview URLs that redirect to file.force.com will fail CORS; ignore and fall back.
@@ -173,14 +196,14 @@ export async function prefetchPresentationAssets(manifestEntry, onProgress) {
     const tasks = [];
     if (
         manifestEntry.formatType === 'PDF' &&
-        manifestEntry.contentDocumentId &&
-        !exceedsApexDownloadLimit(manifestEntry.contentSize)
+        manifestEntry.contentDocumentId
     ) {
         tasks.push({
             label: manifestEntry.name,
             run: () =>
                 getPdfBytes(manifestEntry.contentDocumentId, true, {
-                    contentSize: manifestEntry.contentSize
+                    contentSize: manifestEntry.contentSize,
+                    contentVersionId: manifestEntry.contentVersionId
                 })
         });
     }

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176d3" />
+    <title>Record — Pharma Field PWA</title>
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="account.css" />
+    <link rel="stylesheet" href="record.css" />
+</head>
+<body>
+    <header class="record-header">
+        <div class="nav-left">
+            <button id="btn-back" class="back-btn" aria-label="Back">←</button>
+            <span class="nav-title">Record</span>
+        </div>
+        <div class="record-header-status">
+            <span id="record-version" class="record-version-badge">v62.0</span>
+        </div>
+    </header>
+
+    <form id="record-form" class="record-form" autocomplete="off">
+        <label class="record-field">
+            <span class="record-label">Record ID</span>
+            <input id="record-id" name="recordId" type="text"
+                placeholder="e.g. 0011700000ABCDEFGHI" required spellcheck="false" />
+        </label>
+        <label class="record-field">
+            <span class="record-label">Object (optional — auto-detected)</span>
+            <input id="record-object" name="object" type="text"
+                placeholder="e.g. Account, Case, Contact" spellcheck="false" />
+        </label>
+        <button id="btn-load" class="record-load-btn" type="submit">Load record</button>
+    </form>
+
+    <p class="record-hint">
+        Pulls any record through the Salesforce UI API
+        <code>/services/data/v62.0/ui-api/record-ui/&lt;id&gt;</code> and shows fields in
+        page-layout order and sections (falls back to a full field dump if no layout
+        is available). Field-level security respected.
+    </p>
+
+    <div id="record-error" class="error-banner" style="display:none" role="alert"></div>
+    <div id="record-loading" class="loading-msg" style="display:none">Loading record…</div>
+
+    <div id="record-result" style="display:none">
+        <div class="record-highlights">
+            <div class="record-highlights-icon" id="record-icon" aria-hidden="true">—</div>
+            <div class="record-highlights-body">
+                <div class="record-highlights-eyebrow">
+                    <span id="record-object-badge">—</span>
+                    <span id="record-type-badge" style="display:none">—</span>
+                </div>
+                <h1 id="record-title" class="record-highlights-title">—</h1>
+                <p id="record-subtitle" class="record-highlights-sub">—</p>
+                <span id="record-id-badge" class="record-highlights-id">—</span>
+            </div>
+        </div>
+
+        <div class="record-toolbar">
+            <input id="record-filter" class="record-filter" type="search"
+                placeholder="Search this record…" spellcheck="false" />
+            <button id="btn-raw" class="record-raw-btn" type="button">Show raw JSON</button>
+        </div>
+
+        <!-- SLDS-style page-layout view (UI API) -->
+        <div id="record-sections" class="record-sections"></div>
+
+        <!-- Fallback flat field dump (raw describe) -->
+        <div class="record-table-wrap" id="record-table-wrap" style="display:none">
+            <table id="record-table" class="record-table">
+                <thead>
+                    <tr><th>Field</th><th>Value</th></tr>
+                </thead>
+                <tbody id="record-tbody"></tbody>
+            </table>
+        </div>
+
+        <pre id="record-raw" class="record-raw" style="display:none"></pre>
+    </div>
+
+    <script type="module" src="record.js"></script>
+</body>
+</html>

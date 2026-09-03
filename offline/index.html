@@ -14,27 +14,12 @@
     </head>
     <body>
         <header id="app-nav" class="app-nav" hidden>
-            <div class="nav-left">
-                <div class="nav-brand">
-                    <span class="nav-title">Pharma Field</span>
-                    <span class="nav-badge">PWA</span>
-                </div>
-                <nav class="nav-tabs" role="tablist">
-                    <button id="tab-btn-home" class="nav-tab nav-tab-active" type="button" role="tab" data-tab="home" aria-selected="true">
-                        🏠 Home
-                    </button>
-                    <button id="tab-btn-accounts" class="nav-tab" type="button" role="tab" data-tab="accounts" aria-selected="false">
-                        🏢 Accounts
-                    </button>
-                        <button id="tab-btn-planner" class="nav-tab" type="button" role="tab" data-tab="planner" aria-selected="false">
-                            📅 Field Rep Planner
-                        </button>
-                        <button id="tab-btn-visits" class="nav-tab" type="button" role="tab" data-tab="visits" aria-selected="false">
-                            📋 Visits
-                        </button>
-                </nav>
+            <div class="nav-brand">
+                <span class="nav-title">Pharma Field</span>
+                <span class="nav-badge">v1.0.0</span>
             </div>
-            <div class="nav-actions">
+<nav id="app-tabs" class="nav-tabs" role="tablist"></nav>
+            <div class="nav-actions nav-sidebar-actions">
                 <button id="logout-btn" class="nav-btn-logout" type="button" title="Log out and clear access token">
                     Log out
                 </button>
@@ -61,28 +46,11 @@
             <div id="view-home" class="view-panel active"></div>
             <div id="view-accounts" class="view-panel"></div>
             <div id="view-planner" class="view-panel"></div>
-            <div id="view-visits" class="view-panel"></div>
+            <div id="view-timeoff" class="view-panel"></div>
+            <div id="view-clm" class="view-panel"></div>
+            <div id="view-entity" class="view-panel"></div>
+            <div id="view-unsupported" class="view-panel"></div>
         </main>
-
-        <!-- Bottom Navigation Bar -->
-        <nav class="bottom-nav" id="bottom-nav" hidden>
-            <button class="bottom-nav-item active" data-tab="home" type="button">
-                <span class="nav-glyph">🏠</span>
-                <span class="nav-label">Home</span>
-            </button>
-            <button class="bottom-nav-item" data-tab="accounts" type="button">
-                <span class="nav-glyph">🏢</span>
-                <span class="nav-label">Accounts</span>
-            </button>
-            <button class="bottom-nav-item" data-tab="planner" type="button">
-                <span class="nav-glyph">📅</span>
-                <span class="nav-label">Planner</span>
-            </button>
-            <button class="bottom-nav-item" data-tab="visits" type="button">
-                <span class="nav-glyph">📋</span>
-                <span class="nav-label">Visits</span>
-            </button>
-        </nav>
 
         <script type="module" src="/src/main.js"></script>
     </body>

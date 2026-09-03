@@ -182,7 +182,8 @@ export default class ClmRatingsCapture extends LightningElement {
 
         this.isSaving = true;
         try {
-            if (navigator.onLine && !isOfflineMode()) {
+            // Note: navigator.onLine is unreliable in Capacitor WebView - always try to save
+            if (!isOfflineMode()) {
                 await saveVisitRatings({
                     visitId: this.visitId,
                     sessionId: this.sessionId,

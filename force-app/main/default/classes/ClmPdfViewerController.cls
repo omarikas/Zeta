@@ -34,9 +34,9 @@ public with sharing class ClmPdfViewerController {
         Decimal contentSize = versions[0].ContentSize;
         if (contentSize != null && contentSize > 4500000) {
             throw new ClmViewerException(
-                'This HTML package is too large to load through Salesforce (' +
+                'This presentation is too large to load through Apex (' +
                 String.valueOf((contentSize / 1048576).setScale(1)) +
-                ' MB). Re-upload a ZIP under 4 MB, or convert the deck to PDF.'
+                ' MB). The mobile client downloads large decks from Files directly.'
             );
         }
 

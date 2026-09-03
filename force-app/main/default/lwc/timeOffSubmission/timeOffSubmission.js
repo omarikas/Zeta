@@ -1,7 +1,6 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import { refreshApex } from '@salesforce/apex';
 import { createRecord } from 'lightning/uiRecordApi';
 import getMyRequests from '@salesforce/apex/TimeOffRequestController.getMyRequests';
 
@@ -56,9 +55,23 @@ export default class TimeOffSubmission extends NavigationMixin(LightningElement)
     spanTypeOptions = SPAN_TYPE_OPTIONS;
     durationOptions = DURATION_OPTIONS;
 
-    wiredRequestsResult;
     myRequests = [];
     requestsError;
+
+    connectedCallback() {
+        this.loadRequests();
+    }
+
+    async loadRequests() {
+        try {
+            const data = await getMyRequests({ limitSize: 10 });
+            this.myRequests = (data || []).map((request) => this.mapRequestRow(request));
+            this.requestsError = undefined;
+        } catch (error) {
+            this.myRequests = [];
+            this.requestsError = this.reduceError(error);
+        }
+    }
 
     columns = [
         { label: 'Request', fieldName: 'recordUrl', type: 'url', typeAttributes: { label: { fieldName: 'name' }, target: '_self' } },
@@ -69,19 +82,6 @@ export default class TimeOffSubmission extends NavigationMixin(LightningElement)
         { label: 'Days', fieldName: 'workingDays', type: 'number', cellAttributes: { alignment: 'left' } },
         { label: 'Stage', fieldName: 'stage', type: 'text', cellAttributes: { class: { fieldName: 'stageClass' } } }
     ];
-
-    @wire(getMyRequests, { limitSize: 10 })
-    wiredRequests(result) {
-        this.wiredRequestsResult = result;
-        const { data, error } = result;
-        if (data) {
-            this.myRequests = data.map((request) => this.mapRequestRow(request));
-            this.requestsError = undefined;
-        } else if (error) {
-            this.myRequests = [];
-            this.requestsError = this.reduceError(error);
-        }
-    }
 
     get isHoursSpan() {
         return this.spanTypeValue === SPAN_HOURS;
@@ -165,7 +165,7 @@ export default class TimeOffSubmission extends NavigationMixin(LightningElement)
                     : 'Your time off request was saved as a draft.';
 
             this.resetForm();
-            await refreshApex(this.wiredRequestsResult);
+            await this.loadRequests();
             this.showToast(successTitle, successMessage, 'success');
             this.navigateToRecord(created.id);
         } catch (error) {

@@ -186,8 +186,9 @@ export default class ClmMessageFeedback extends LightningElement {
             }));
         this.isSaving = true;
         try {
+            // Note: navigator.onLine is unreliable in Capacitor WebView
+            // Always try to save - let network failures be handled gracefully
             if (
-                navigator.onLine &&
                 this.sessionId &&
                 /^[a-zA-Z0-9]{15}$|^[a-zA-Z0-9]{18}$/.test(String(this.sessionId))
             ) {

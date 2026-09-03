@@ -1,0 +1,1 @@
+export default { fieldApiName: 'Span_Duration_Select__c', objectApiName: 'Time_Off_Request__c' };

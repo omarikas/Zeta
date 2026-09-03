@@ -18,6 +18,15 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#0176d3'
+    },
+    App: {
+      // Handle deep links for OAuth callbacks
+      deepLinks: [
+        {
+          scheme: 'com.zetapharma.fieldpwa',
+          path: '/oauth/callback'
+        }
+      ]
     }
   }
 };

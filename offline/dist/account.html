@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176d3" />
+    <title>Account — Pharma Field PWA</title>
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="account.css" />
+</head>
+<body>
+    <header class="account-header">
+        <div class="nav-left">
+            <button id="btn-back" class="back-btn" aria-label="Back to accounts">←</button>
+            <span class="nav-title">Account</span>
+        </div>
+        <div class="account-header-status">
+            <span id="sync-chip" class="sync-chip" style="display:none" aria-live="polite"></span>
+        </div>
+    </header>
+
+    <div class="account-hero" id="account-hero" style="display:none">
+        <div class="account-hero-badges">
+            <span id="account-record-type" class="badge badge-default">—</span>
+            <span id="account-classification" class="badge badge-default">—</span>
+            <span id="account-risk" class="badge badge-low">—</span>
+        </div>
+        <h1 id="account-name" class="account-name">—</h1>
+        <p id="account-specialty" class="account-specialty">—</p>
+    </div>
+
+    <div class="account-grid" id="account-grid" style="display:none">
+        <article class="account-card">
+            <h2 class="account-card-title">Contact</h2>
+            <div class="account-fields">
+                <div class="account-field"><span class="account-label">Phone</span><span class="account-value" id="field-phone">—</span></div>
+                <div class="account-field"><span class="account-label">Business Unit</span><span class="account-value" id="field-business-unit">—</span></div>
+                <div class="account-field"><span class="account-label">Record Type</span><span class="account-value" id="field-record-type">—</span></div>
+            </div>
+        </article>
+
+        <article class="account-card">
+            <h2 class="account-card-title">Location</h2>
+            <div class="account-fields">
+                <div class="account-field"><span class="account-label">Address</span><span class="account-value" id="field-address">—</span></div>
+                <div class="account-field"><span class="account-label">City, State</span><span class="account-value" id="field-city-state">—</span></div>
+                <div class="account-field"><span class="account-label">Postal</span><span class="account-value" id="field-postal">—</span></div>
+                <div class="account-field"><span class="account-label">Country</span><span class="account-value" id="field-country">—</span></div>
+            </div>
+        </article>
+
+        <article class="account-card">
+            <h2 class="account-card-title">Performance</h2>
+            <div class="account-fields">
+                <div class="account-field"><span class="account-label">Agentforce Score</span><span class="account-value" id="field-agentforce-score">—</span></div>
+                <div class="account-field"><span class="account-label">Agentforce Risk</span><span class="account-value" id="field-agentforce-risk">—</span></div>
+                <div class="account-field"><span class="account-label">Projected %</span><span class="account-value" id="field-projected-percent">—</span></div>
+            </div>
+        </article>
+
+        <article class="account-card">
+            <h2 class="account-card-title">Visit Metrics</h2>
+            <div class="account-fields">
+                <div class="account-field"><span class="account-label">Visits (Actual/Target)</span><span class="account-value" id="field-visits">—</span></div>
+                <div class="account-field"><span class="account-label">Pace Status</span><span class="account-value" id="field-pace-status">—</span></div>
+                <div class="account-field"><span class="account-label">Plan Cycle</span><span class="account-value" id="field-plan-cycle">—</span></div>
+            </div>
+        </article>
+    </div>
+
+    <div class="error-banner" id="account-error" style="display:none" role="alert"></div>
+    <div class="loading-msg" id="account-loading">Loading account…</div>
+
+    <script type="module" src="account.js"></script>
+</body>
+</html>

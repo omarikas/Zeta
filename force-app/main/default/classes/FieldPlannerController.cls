@@ -1,4 +1,4 @@
-public with sharing class FieldPlannerController {
+public without sharing class FieldPlannerController {
 
   public class AccountSummary {
     @AuraEnabled
@@ -604,7 +604,7 @@ public with sharing class FieldPlannerController {
     return options;
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static AccountPageResult searchAccountsPage(
     String searchTerm,
     String recordTypeDeveloperName,
@@ -627,12 +627,12 @@ public with sharing class FieldPlannerController {
     );
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static List<AccountSummary> getMapAccounts(Id contextUserId) {
     return queryMapAccounts(contextUserId);
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static PlannerFilterOptions getPlannerAccountFilterOptions(Id contextUserId) {
     Id resolvedUserId = resolveContextUserId(contextUserId);
     PlannerFilterOptions result = new PlannerFilterOptions();
@@ -797,7 +797,7 @@ public with sharing class FieldPlannerController {
     return result;
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static List<ProjectOption> getPromotionalProjects(Id contextUserId) {
     List<ProjectOption> options = new List<ProjectOption>();
     if (!plannerHasObject('Pharma_Project__c')) {
@@ -859,7 +859,7 @@ public with sharing class FieldPlannerController {
     return options;
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static List<AccountVisitTarget> getAccountVisitTargets(Id contextUserId) {
     Id resolvedUserId = resolveContextUserId(contextUserId);
     List<AccountVisitTarget> results = new List<AccountVisitTarget>();
@@ -878,6 +878,7 @@ public with sharing class FieldPlannerController {
       return results;
     }
 
+    Set<Id> scopedAccountIds = resolveScopedAccountIds(resolvedUserId);
     for (Employee_Time_Card_Account_Target__c target : [
       SELECT
         Account__c,
@@ -898,6 +899,9 @@ public with sharing class FieldPlannerController {
       ORDER BY Potentiality__c ASC
       LIMIT 200
     ]) {
+      if (scopedAccountIds != null && !scopedAccountIds.contains(target.Account__c)) {
+        continue;
+      }
       AccountVisitTarget row = new AccountVisitTarget();
       row.accountId = target.Account__c;
       row.accountName = target.Account__r.Name;
@@ -913,7 +917,7 @@ public with sharing class FieldPlannerController {
     return results;
   }
 
-  @AuraEnabled(cacheable=true)
+  @AuraEnabled
   public static PlannerViewerContext getPlannerViewerContext() {
     PlannerViewerContext ctx = new PlannerViewerContext();
     ctx.defaultUserId = UserInfo.getUserId();
@@ -939,11 +943,13 @@ public with sharing class FieldPlannerController {
     if (hasFullPlannerAccountAccess()) {
       ctx.viewerMode = 'admin';
       ctx.canSwitchView = true;
-      ctx.options = buildViewerOptionsForTerritories(
-        headOfficeId != null
-          ? expandTerritoryHierarchy(new Set<Id>{ headOfficeId })
-          : new Set<Id>()
+      Set<Id> scopedTerritoryIds = expandTerritoryHierarchy(
+        TerritoryContextService.getEffectiveTerritoryIds(UserInfo.getUserId())
       );
+      if (scopedTerritoryIds.isEmpty() && headOfficeId != null) {
+        scopedTerritoryIds = expandTerritoryHierarchy(new Set<Id>{ headOfficeId });
+      }
+      ctx.options = buildViewerOptionsForTerritories(scopedTerritoryIds);
     }
     return ctx;
   }
@@ -1010,6 +1016,7 @@ public with sharing class FieldPlannerController {
     }
 
     List<Visit__c> updates = new List<Visit__c>();
+    Set<Id> submittedIds = new Set<Id>();
     for (Integer i = 0; i < visitIds.size(); i++) {
       Visit__c visit = visitsById.get(visitIds[i]);
       if (visit.Status__c == 'Completed' || visit.Status__c == 'Cancelled') {
@@ -1035,7 +1042,7 @@ public with sharing class FieldPlannerController {
         (visit.Start_Date__c != startDt || visit.End_Date__c != endDt);
       if (replan) {
         visit.Status__c = VisitStatusHelper.STATUS_SUBMITTED;
-        visit.Submitted_At__c = System.now();
+        submittedIds.add(visit.Id);
       }
       visit.Start_Date__c = startDt;
       visit.End_Date__c = endDt;
@@ -1045,16 +1052,9 @@ public with sharing class FieldPlannerController {
 
     update as user updates;
 
-    for (Visit__c visit : updates) {
-      if (visit.Status__c == VisitStatusHelper.STATUS_SUBMITTED) {
-        try {
-          submitForApprovalInternal(visit.Id);
-        } catch (Exception ex) {
-          throw new AuraHandledException(
-            'Visit was replanned but could not be submitted for approval: ' + ex.getMessage()
-          );
-        }
-      }
+    stampSubmittedAt(submittedIds);
+    for (Id submittedId : submittedIds) {
+      submitForApprovalInternal(submittedId);
     }
 
     List<VisitSummary> results = new List<VisitSummary>();
@@ -1065,10 +1065,53 @@ public with sharing class FieldPlannerController {
   }
 
   private static void submitForApprovalInternal(Id visitId) {
-    Approval.ProcessSubmitRequest approvalRequest = new Approval.ProcessSubmitRequest();
-    approvalRequest.setComments('Visit plan submitted.');
-    approvalRequest.setObjectId(visitId);
-    Approval.process(approvalRequest);
+    if (visitId == null) {
+      return;
+    }
+    try {
+      Approval.ProcessSubmitRequest approvalRequest = new Approval.ProcessSubmitRequest();
+      approvalRequest.setComments('Visit plan submitted.');
+      approvalRequest.setObjectId(visitId);
+      Approval.ProcessResult result = Approval.process(approvalRequest, false);
+      if (result != null && !result.isSuccess()) {
+        List<String> messages = new List<String>();
+        for (Database.Error err : result.getErrors()) {
+          messages.add(err.getMessage());
+        }
+        System.debug(
+          LoggingLevel.WARN,
+          'Native visit approval was not started for ' +
+          visitId +
+          ': ' +
+          String.join(messages, '; ')
+        );
+      }
+    } catch (Exception ex) {
+      // Custom manager queue keys off Status = Submitted. Missing Manager on the
+      // user (or other approval-process gaps) must not roll the plan back to Draft.
+      System.debug(
+        LoggingLevel.WARN,
+        'Native visit approval skipped for ' + visitId + ': ' + ex.getMessage()
+      );
+    }
+  }
+
+  private static void stampSubmittedAt(Id visitId) {
+    if (visitId == null) {
+      return;
+    }
+    stampSubmittedAt(new Set<Id>{ visitId });
+  }
+
+  private static void stampSubmittedAt(Set<Id> visitIds) {
+    if (visitIds == null || visitIds.isEmpty()) {
+      return;
+    }
+    List<Visit__c> stamps = new List<Visit__c>();
+    for (Id visitId : visitIds) {
+      stamps.add(new Visit__c(Id = visitId, Submitted_At__c = System.now()));
+    }
+    update as system stamps;
   }
 
   @AuraEnabled
@@ -1105,18 +1148,13 @@ public with sharing class FieldPlannerController {
       visit.End_Date__c,
       visit.Id
     );
-    visit.Status__c = VisitStatusHelper.STATUS_SUBMITTED;
-    visit.Submitted_At__c = System.now();
-    update as user visit;
-
-    try {
-      submitForApprovalInternal(visit.Id);
-    } catch (Exception ex) {
-      visit.Status__c = VisitStatusHelper.STATUS_DRAFT;
-      visit.Submitted_At__c = null;
-      update as user visit;
-      throw new AuraHandledException('Unable to submit visit for approval: ' + ex.getMessage());
-    }
+    Visit__c userUpdate = new Visit__c(
+      Id = visit.Id,
+      Status__c = VisitStatusHelper.STATUS_SUBMITTED
+    );
+    update as user userUpdate;
+    stampSubmittedAt(visit.Id);
+    submitForApprovalInternal(visit.Id);
 
     return mapVisit(queryPlannerVisitById(visit.Id));
   }
@@ -1158,7 +1196,7 @@ public with sharing class FieldPlannerController {
         result.submittedCount++;
       } catch (Exception ex) {
         result.failedCount++;
-        result.errors.add(ex.getMessage());
+        result.errors.add(formatPlannerException(ex));
       }
     }
     return result;
@@ -1269,9 +1307,6 @@ public with sharing class FieldPlannerController {
     );
 
     visit.Status__c = targetStatus;
-    if (targetStatus == VisitStatusHelper.STATUS_SUBMITTED && priorStatus != VisitStatusHelper.STATUS_SUBMITTED) {
-      visit.Submitted_At__c = System.now();
-    }
     if (input.accountId != null) {
       visit.Account__c = input.accountId;
     }
@@ -1557,7 +1592,15 @@ public with sharing class FieldPlannerController {
         ORDER BY Start_Date__c ASC
       ];
     }
+    Set<Id> scopedAccountIds = resolveScopedAccountIds(userId);
     for (Visit__c visit : visits) {
+      if (
+        scopedAccountIds != null &&
+        visit.Account__c != null &&
+        !scopedAccountIds.contains(visit.Account__c)
+      ) {
+        continue;
+      }
       results.add(mapVisit(visit));
     }
     return results;
@@ -2090,18 +2133,9 @@ public with sharing class FieldPlannerController {
   }
 
   @TestVisible
-  private static Set<Id> getUserTerritoryIds() {
-    Set<Id> territoryIds = new Set<Id>();
-    for (UserTerritory2Association assignment : [
-      SELECT Territory2Id
-      FROM UserTerritory2Association
-      WHERE UserId = :UserInfo.getUserId()
-      WITH SYSTEM_MODE
-    ]) {
-      territoryIds.add(assignment.Territory2Id);
+    private static Set<Id> getUserTerritoryIds() {
+        return TerritoryContextService.getEffectiveTerritoryIds(UserInfo.getUserId());
     }
-    return territoryIds;
-  }
 
   @TestVisible
   private static Set<Id> expandTerritoryHierarchy(Set<Id> seedTerritoryIds) {
@@ -2235,6 +2269,16 @@ public with sharing class FieldPlannerController {
     return detail;
   }
 
+  private static String formatPlannerException(Exception ex) {
+    if (ex == null) {
+      return 'Unexpected error';
+    }
+    if (ex instanceof AuraHandledException && String.isNotBlank(ex.getMessage())) {
+      return ex.getMessage();
+    }
+    return String.isBlank(ex.getMessage()) ? 'Unexpected error' : ex.getMessage();
+  }
+
   private static String formatDurationLabel(DateTime startDateTime, DateTime endDateTime) {
     if (startDateTime == null || endDateTime == null) {
       return null;
@@ -2296,7 +2340,11 @@ public with sharing class FieldPlannerController {
   }
 
   private static Set<Id> resolveScopedAccountIds(Id contextUserId) {
-    if (contextUserId == UserInfo.getUserId() && hasFullPlannerAccountAccess()) {
+    if (
+      contextUserId == UserInfo.getUserId() &&
+      hasFullPlannerAccountAccess() &&
+      !TerritoryContextService.hasSelectedTerritory()
+    ) {
       return null;
     }
     Set<Id> accountIds = getTerritoryAccountIdsForUser(contextUserId);
@@ -2421,18 +2469,9 @@ public with sharing class FieldPlannerController {
     return MedicalSpecialtyPicklist.resolveApiValue(specialty);
   }
 
-  private static Set<Id> getUserTerritoryIdsForUser(Id userId) {
-    Set<Id> territoryIds = new Set<Id>();
-    for (UserTerritory2Association assignment : [
-      SELECT Territory2Id
-      FROM UserTerritory2Association
-      WHERE UserId = :userId
-      WITH SYSTEM_MODE
-    ]) {
-      territoryIds.add(assignment.Territory2Id);
+    private static Set<Id> getUserTerritoryIdsForUser(Id userId) {
+        return TerritoryContextService.getEffectiveTerritoryIds(userId);
     }
-    return territoryIds;
-  }
 
   private static Set<Id> getTerritoryAccountIdsForUser(Id userId) {
     return resolveTerritoryAccountIds(expandTerritoryHierarchy(getUserTerritoryIdsForUser(userId)));

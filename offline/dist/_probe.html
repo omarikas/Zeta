@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>width probe</title>
+<style>
+html,body{margin:0;height:100%;background:#f3f3f3;font-family:sans-serif}
+.app-shell{flex:1;min-height:0;display:flex;flex-direction:column;margin:0 auto;padding:1rem;padding-left:calc(4.5rem + env(safe-area-inset-left,0px) + 1rem)}
+.view-panel.active{display:flex;flex-direction:column;flex:1;min-height:0}
+#view-entity iframe{flex:1;min-height:0;width:100%;border:0;height:100%}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div id="view-entity" class="view-panel active">
+    <iframe id="frame" src="/list.html?object=Visit__c"></iframe>
+  </div>
+</div>
+<pre id="out"></pre>
+<script type="module">
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const out = [];
+    const frame = document.getElementById('frame');
+    const fw = frame.getBoundingClientRect().width;
+    out.push(`iframe: w=${Math.round(fw)}`);
+    try {
+      const doc = frame.contentDocument;
+      const body = doc.body;
+      const header = doc.querySelector('.list-header');
+      const controls = doc.querySelector('.list-controls');
+      const controlsRow = doc.querySelector('.list-controls-row');
+      const tableWrap = doc.querySelector('.list-table-wrap');
+      const table = doc.querySelector('.list-table');
+      const probe = (n, el) => { if (el) out.push(`${n}: w=${Math.round(el.getBoundingClientRect().width)}`); };
+      probe('list-body', body);
+      probe('list-header', header);
+      probe('list-controls', controls);
+      probe('controls-row', controlsRow);
+      probe('table-wrap', tableWrap);
+      probe('table', table);
+    } catch (e) { out.push('ERR ' + e.message); }
+    document.getElementById('out').textContent = out.join('\n');
+  }, 4000);
+});
+</script>
+</body>
+</html>

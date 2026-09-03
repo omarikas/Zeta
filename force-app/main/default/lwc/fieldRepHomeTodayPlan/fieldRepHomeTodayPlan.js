@@ -581,12 +581,10 @@ export default class FieldRepHomeTodayPlan extends LightningElement {
             this.init();
         };
         this._onOffline = () => {
+            // Abort in-flight requests but don't immediately show offline
+            // The API call failure in catch block will handle real network failures
             if (this.refreshAbort) {
                 this.refreshAbort.abort();
-            }
-            this.syncStatus = 'offline';
-            if (!this.hasCachedData) {
-                this.errorMessage = 'You are offline. Connect to load today’s plan.';
             }
         };
         window.addEventListener('online', this._onOnline);
@@ -607,14 +605,8 @@ export default class FieldRepHomeTodayPlan extends LightningElement {
             this.hasCachedData = false;
         }
 
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            this.syncStatus = 'offline';
-            if (!this.hasCachedData) {
-                this.errorMessage = 'You are offline. Connect to load today’s plan.';
-            }
-            return;
-        }
-
+        // Note: navigator.onLine is unreliable in Capacitor WebView
+        // Always try the API call - catch block handles real network failures
         this.syncStatus = 'updating';
         try {
             await this.loadTodayPlan({ skipMap: this.hasCachedData });
@@ -764,13 +756,23 @@ export default class FieldRepHomeTodayPlan extends LightningElement {
         if (options.method === 'GET') {
             this.refreshAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
         }
-        const response = await fetch(`${String(restBase).replace(/\/$/, '')}${path}`, {
-            method: options.method || 'GET',
-            credentials: token ? 'omit' : 'same-origin',
-            headers,
-            body: options.body,
-            signal: options.method === 'GET' && this.refreshAbort ? this.refreshAbort.signal : undefined
-        });
+        let response;
+        try {
+            response = await fetch(`${String(restBase).replace(/\/$/, '')}${path}`, {
+                method: options.method || 'GET',
+                credentials: token ? 'omit' : 'same-origin',
+                headers,
+                body: options.body,
+                signal: options.method === 'GET' && this.refreshAbort ? this.refreshAbort.signal : undefined
+            });
+        } catch (fetchError) {
+            // Network error (TypeError, etc.) - manual mode, no auto-detection
+            console.warn('[TodayPlan] Network error detected:', fetchError.message);
+            const offlineError = new Error('Offline');
+            offlineError.name = 'OfflineError';
+            throw offlineError;
+        }
+        // Manual mode - no auto-detection of online status
         if (!response.ok) {
             if (response.status >= 500) {
                 const offlineError = new Error('Offline');
@@ -1180,13 +1182,42 @@ export default class FieldRepHomeTodayPlan extends LightningElement {
             return;
         }
 
+        // If offline, queue the action and update UI optimistically
+        if (isOfflineMode()) {
+            await queueOfflineAction({
+                type: 'DELETE_VISIT',
+                path: VISITS_DELETE_PATH,
+                payload: { visitId: visit.id }
+            });
+            // Optimistically remove from UI
+            this.upNextVisits = this.upNextVisits.filter(
+                (v) => !sameSalesforceId(v.id, visit.id)
+            );
+            this.showToast('Visit queued for removal', `${label} will be removed when online`, 'info');
+            return;
+        }
+
         this.isMutatingVisit = true;
         try {
             await this.deleteVisitRemote(visit.id);
             this.showToast('Visit removed', label, 'success');
             await this.loadTodayPlan();
         } catch (error) {
-            this.showToast('Remove failed', this.reduceError(error), 'error');
+            // If network error, queue for later
+            if (error?.name === 'OfflineError' || error?.message?.includes('fetch')) {
+                await queueOfflineAction({
+                    type: 'DELETE_VISIT',
+                    path: VISITS_DELETE_PATH,
+                    payload: { visitId: visit.id }
+                });
+                // Optimistically remove from UI
+                this.upNextVisits = this.upNextVisits.filter(
+                    (v) => !sameSalesforceId(v.id, visit.id)
+                );
+                this.showToast('Visit queued for removal', `${label} will be removed when online`, 'info');
+            } else {
+                this.showToast('Remove failed', this.reduceError(error), 'error');
+            }
         } finally {
             this.isMutatingVisit = false;
         }
@@ -1228,6 +1259,10 @@ export default class FieldRepHomeTodayPlan extends LightningElement {
     }
 
     openSalesforceRecord(objectApiName, recordId) {
+        if (isPwaRuntime() && objectApiName !== 'Account') {
+            window.open(`/record.html?recordId=${encodeURIComponent(recordId)}&object=${encodeURIComponent(objectApiName)}`, '_blank');
+            return;
+        }
         const instanceUrl = typeof globalThis !== 'undefined' ? globalThis.PLANNER_SF_INSTANCE || '' : '';
         const path = `/lightning/r/${objectApiName}/${recordId}/view`;
         if (instanceUrl) {

@@ -45,6 +45,10 @@
       "path": "../force-app/main/default/lwc/clmOfflineSync/clmOfflineSync.js"
     },
     {
+      "name": "c/timeOffSubmission",
+      "path": "../force-app/main/default/lwc/timeOffSubmission/timeOffSubmission.js"
+    },
+    {
       "name": "@salesforce/apex/PlannerMobileRestService.getHomeDashboard",
       "path": "./src/apex/getHomeDashboard.js"
     },

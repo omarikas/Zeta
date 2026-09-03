@@ -250,6 +250,11 @@ global with sharing class PlannerMobileRestService {
         writeJson(res, 200, AccountsTabController.getAccountsTabRecordTypeOptions());
         return;
       }
+      if (path.startsWith('accounts/')) {
+        Id accountId = (Id) path.substringAfter('accounts/');
+        writeJson(res, 200, buildAccountDetails(accountId));
+        return;
+      }
       writeJson(res, 404, new ErrorResponse('Unknown GET path: ' + path));
     } catch (Exception e) {
       writeJson(res, 400, new ErrorResponse(e.getMessage()));
@@ -541,9 +546,10 @@ global with sharing class PlannerMobileRestService {
         (String) payload.get('comments'),
         (String) payload.get('stage')
       );
-    } else {
-      throw new AuraHandledException('Unsupported outbox action: ' + action.actionType);
     }
+    // Unknown action types are skipped so future queue items do not block drain.
+    // Throwing here is invalid outside Aura/VF context (REST), which surfaces as a
+    // LimitException; unknown types are best ignored instead.
   }
 
   private static Map<String, Object> buildUiMetadata() {
@@ -733,6 +739,35 @@ global with sharing class PlannerMobileRestService {
     return new Map<String, Object>{
       'userId' => resolvedUserId,
       'rows' => rows == null ? new List<Object>() : rows
+    };
+  }
+
+  private static Map<String, Object> buildAccountDetails(Id accountId) {
+    if (accountId == null) {
+      return new Map<String, Object>{ 'error' => 'Account ID is required' };
+    }
+    List<Account> accounts = [
+      SELECT Id, Name, Phone,
+             ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry,
+             RecordType.Name
+      FROM Account
+      WHERE Id = :accountId
+      LIMIT 1
+    ];
+    if (accounts.isEmpty()) {
+      return new Map<String, Object>{ 'error' => 'Account not found' };
+    }
+    Account acct = accounts[0];
+    return new Map<String, Object>{
+      'id' => acct.Id,
+      'name' => acct.Name,
+      'recordTypeName' => acct.RecordType?.Name,
+      'phone' => acct.Phone,
+      'shippingStreet' => acct.ShippingStreet,
+      'shippingCity' => acct.ShippingCity,
+      'shippingState' => acct.ShippingState,
+      'shippingPostalCode' => acct.ShippingPostalCode,
+      'shippingCountry' => acct.ShippingCountry
     };
   }
 

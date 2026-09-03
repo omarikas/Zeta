@@ -1,0 +1,1 @@
+export default { fieldApiName: 'Stage__c', objectApiName: 'Time_Off_Request__c' };

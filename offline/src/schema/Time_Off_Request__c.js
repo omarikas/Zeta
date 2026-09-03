@@ -1,0 +1,1 @@
+export default { objectApiName: 'Time_Off_Request__c' };

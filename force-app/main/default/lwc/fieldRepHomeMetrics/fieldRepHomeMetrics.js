@@ -681,12 +681,10 @@ export default class FieldRepHomeMetrics extends LightningElement {
             this.init();
         };
         this._onOffline = () => {
+            // Abort in-flight requests but don't immediately show offline
+            // The API call failure in catch block will handle real network failures
             if (this.refreshAbort) {
                 this.refreshAbort.abort();
-            }
-            this.syncStatus = 'offline';
-            if (!this.hasCachedData) {
-                this.errorMessage = 'You are offline. Connect to load metrics.';
             }
         };
         window.addEventListener('online', this._onOnline);
@@ -705,14 +703,8 @@ export default class FieldRepHomeMetrics extends LightningElement {
             this.hasCachedData = false;
         }
 
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            this.syncStatus = 'offline';
-            if (!this.hasCachedData) {
-                this.errorMessage = 'You are offline. Connect to load metrics.';
-            }
-            return;
-        }
-
+        // Note: navigator.onLine is unreliable in Capacitor WebView
+        // Always try the API call - catch block handles real network failures
         this.syncStatus = 'updating';
         try {
             const payload = await this.fetchHomeDashboard();
@@ -779,12 +771,22 @@ export default class FieldRepHomeMetrics extends LightningElement {
             this.refreshAbort.abort();
         }
         this.refreshAbort = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const response = await fetch(path, {
-            method: 'GET',
-            credentials: token ? 'omit' : 'same-origin',
-            headers,
-            signal: this.refreshAbort ? this.refreshAbort.signal : undefined
-        });
+        let response;
+        try {
+            response = await fetch(path, {
+                method: 'GET',
+                credentials: token ? 'omit' : 'same-origin',
+                headers,
+                signal: this.refreshAbort ? this.refreshAbort.signal : undefined
+            });
+        } catch (fetchError) {
+            // Network error (TypeError, etc.) - manual mode, no auto-detection
+            console.warn('[HomeMetrics] Network error detected:', fetchError.message);
+            const offlineError = new Error('Offline');
+            offlineError.name = 'OfflineError';
+            throw offlineError;
+        }
+        // Manual mode - no auto-detection of online status
         if (!response.ok) {
             if (response.status >= 500) {
                 const offlineError = new Error('Offline');

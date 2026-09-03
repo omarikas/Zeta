@@ -128,7 +128,7 @@ public with sharing class AccountsTabController {
     public String potential;
     @AuraEnabled
     public String penetration;
-    @AuraEnabled
+      @AuraEnabled
     public List<AccountBusinessUnitService.LinkDto> businessUnits;
     @AuraEnabled
     public String businessUnitLabel;

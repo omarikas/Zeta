@@ -183,4 +183,41 @@ private class ClmMetricsSmokeTest {
         }
         Test.stopTest();
     }
+
+    @IsTest
+    static void manifestCarriesContentVersionInfo() {
+        ContentVersion version = new ContentVersion(
+            Title = 'manifest-smoke.pdf',
+            PathOnClient = 'manifest-smoke.pdf',
+            VersionData = Blob.valueOf('%PDF-1.4 manifest smoke'),
+            IsMajorVersion = true
+        );
+        insert version;
+        version = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :version.Id LIMIT 1];
+
+        insert new CLM_Presentation__c(
+            Name = 'Manifest Smoke Deck',
+            Status__c = 'Available',
+            Format__c = 'PDF',
+            Slide_Count__c = 1,
+            Allow_Unaligned__c = true,
+            Content_Document_Id__c = version.ContentDocumentId
+        );
+
+        Test.startTest();
+        List<ClmMetricsController.PresentationPrefetch> manifest =
+            ClmMetricsController.getRepPresentationManifest();
+        Test.stopTest();
+
+        ClmMetricsController.PresentationPrefetch match = null;
+        for (ClmMetricsController.PresentationPrefetch entry : manifest) {
+            if (entry.name == 'Manifest Smoke Deck') {
+                match = entry;
+                break;
+            }
+        }
+        System.assertNotEquals(null, match, 'Manifest should include the deck with content.');
+        System.assertEquals(true, String.isNotBlank(match.contentVersionId));
+        System.assertEquals(true, match.contentSize != null && match.contentSize > 0);
+    }
 }

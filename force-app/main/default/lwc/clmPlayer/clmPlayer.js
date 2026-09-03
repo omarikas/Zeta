@@ -3,7 +3,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { loadScript } from 'lightning/platformResourceLoader';
 import JSZIP_URL from '@salesforce/resourceUrl/jszip';
 import PDFJS_URL from '@salesforce/resourceUrl/pdfjs';
-import { getSlideBlob, createObjectUrl, downloadContentBytes, getPdfBytes, exceedsApexDownloadLimit, APEX_DOWNLOAD_MAX_BYTES } from 'c/clmContentCache';
+import { getSlideBlob, createObjectUrl, downloadContentBytes, getPdfBytes } from 'c/clmContentCache';
 import { openPdfDocument } from 'c/clmPdfProcessor';
 import { getManifestEntry, putLocalSession } from 'c/clmOfflineStore';
 import { isOfflineMode, queueOfflineAction } from 'c/clmOfflineSync';
@@ -169,6 +169,8 @@ export default class ClmPlayer extends LightningElement {
             presentationName: manifest.name || this.presentationName,
             formatType: manifest.formatType,
             contentDocumentId: manifest.contentDocumentId,
+            contentVersionId: manifest.contentVersionId,
+            contentSize: manifest.contentSize,
             status: 'Active',
             productName: manifest.productName,
             productImageUrl: manifest.imageUrl,
@@ -210,6 +212,8 @@ export default class ClmPlayer extends LightningElement {
             presentationName: manifest.name || this.presentationName,
             formatType: manifest.formatType,
             contentDocumentId: manifest.contentDocumentId,
+            contentVersionId: manifest.contentVersionId,
+            contentSize: manifest.contentSize,
             status: 'Active',
             productName: manifest.productName,
             productImageUrl: manifest.imageUrl,
@@ -300,11 +304,9 @@ export default class ClmPlayer extends LightningElement {
     }
 
     get usesPdfRenditions() {
-        return (
-            (this.session?.formatType || '').toUpperCase() === 'PDF' &&
-            !!this.session?.contentVersionId &&
-            exceedsApexDownloadLimit(this.session?.contentSize)
-        );
+        // Rendition URLs (/sfc/...) are not reachable from offline PWA / Capacitor.
+        // All PDFs now render via Apex base64 + pdf.js canvas.
+        return false;
     }
 
     get needsHtmlRendering() {
@@ -607,14 +609,11 @@ export default class ClmPlayer extends LightningElement {
         if (this.pdfDoc || !this.session?.contentDocumentId) {
             return;
         }
-        if (exceedsApexDownloadLimit(this.session?.contentSize)) {
-            const error = new Error('LARGE_FILE');
-            error.code = 'LARGE_FILE';
-            throw error;
-        }
         this.pdfLoadingStatus = 'Downloading presentation…';
-        const bytes = await getPdfBytes(this.session.contentDocumentId, navigator.onLine, {
-            contentSize: this.session?.contentSize
+        // Note: navigator.onLine is unreliable in Capacitor WebView - always try to fetch
+        const bytes = await getPdfBytes(this.session.contentDocumentId, true, {
+            contentSize: this.session?.contentSize,
+            contentVersionId: this.session?.contentVersionId
         });
         if (!bytes) {
             throw new Error('Unable to download presentation content.');
@@ -639,18 +638,6 @@ export default class ClmPlayer extends LightningElement {
             this.pdfLoadingStatus = 'Loading presentation…';
         }
         try {
-            if (exceedsApexDownloadLimit(this.session?.contentSize) && this.session?.contentVersionId) {
-                this.slideImageLoadFailed = false;
-                await this.resolveCurrentSlideUrl();
-                this.slideImageReady = !this.currentSlideUrl;
-                if (this.currentSlideUrl) {
-                    this.startSlideImageLoadTimer();
-                }
-                this.pdfSlideReady = true;
-                this.pdfLoadingStatus = null;
-                return;
-            }
-
             await this.ensurePdfDocumentLoaded();
             const canvas = this.template.querySelector('.slide-pdf-canvas');
             if (!canvas) {
@@ -679,26 +666,8 @@ export default class ClmPlayer extends LightningElement {
                 return;
             }
             if (error?.code === 'LARGE_FILE' || /too large|LARGE_FILE|native viewer/i.test(error?.message || '')) {
-                if (this.session?.contentVersionId) {
-                    // Switch to rendition images instead of a download URL.
-                    this.session = {
-                        ...this.session,
-                        contentSize: this.session.contentSize || APEX_DOWNLOAD_MAX_BYTES + 1
-                    };
-                    this.useNativePdfViewer = false;
-                    this.pdfViewerSrc = null;
-                    this.slideImageLoadFailed = false;
-                    await this.resolveCurrentSlideUrl();
-                    this.slideImageReady = !this.currentSlideUrl;
-                    if (this.currentSlideUrl) {
-                        this.startSlideImageLoadTimer();
-                    }
-                    this.pdfSlideReady = true;
-                    this.pdfLoadingStatus = null;
-                    return;
-                }
                 this.pdfLoadError =
-                    'This presentation is too large to load. Re-upload under 4 MB, or generate slide images in the CLM wizard.';
+                    'This presentation is too large to load. Re-upload a smaller PDF (under 4 MB).';
             } else {
                 this.pdfDoc = null;
                 this.pdfLoadError = this.reduceError(error);
@@ -789,7 +758,8 @@ export default class ClmPlayer extends LightningElement {
             }
             this.preloadedUrls.add(url);
             try {
-                const blob = await getSlideBlob(url, navigator.onLine);
+                // Note: navigator.onLine is unreliable in Capacitor WebView - always try to fetch
+                const blob = await getSlideBlob(url, true);
                 if (blob) {
                     const objectUrl = createObjectUrl(blob);
                     if (objectUrl) {
@@ -833,7 +803,8 @@ export default class ClmPlayer extends LightningElement {
             return;
         }
         try {
-            const blob = await getSlideBlob(url, navigator.onLine);
+            // Note: navigator.onLine is unreliable in Capacitor WebView - always try to fetch
+            const blob = await getSlideBlob(url, true);
             if (blob) {
                 const objectUrl = createObjectUrl(blob);
                 this.objectUrls.add(objectUrl);
@@ -888,9 +859,11 @@ export default class ClmPlayer extends LightningElement {
     }
 
     async fetchZipBytes(contentDocumentId) {
-        return downloadContentBytes(contentDocumentId, navigator.onLine, {
+        // Note: navigator.onLine is unreliable in Capacitor WebView - always try to fetch
+        return downloadContentBytes(contentDocumentId, true, {
             publicContentUrl: this.session?.publicContentUrl,
-            contentSize: this.session?.contentSize
+            contentSize: this.session?.contentSize,
+            contentVersionId: this.session?.contentVersionId
         });
     }
 
@@ -1138,7 +1111,8 @@ export default class ClmPlayer extends LightningElement {
 
     async persistMessageResponses() {
         const serverSessionId = this.getServerSessionId();
-        if (serverSessionId && navigator.onLine) {
+        // Note: navigator.onLine is unreliable in Capacitor WebView - always try to save
+        if (serverSessionId) {
             await saveMessageResponses({
                 sessionId: serverSessionId,
                 responses: this.messageResponses
@@ -1235,7 +1209,8 @@ export default class ClmPlayer extends LightningElement {
 
     async sendSlideEvent(sequenceId, dwellSeconds, paused) {
         const serverSessionId = this.getServerSessionId();
-        if (serverSessionId && navigator.onLine) {
+        // Note: navigator.onLine is unreliable in Capacitor WebView - always try to send
+        if (serverSessionId) {
             await logSlideEvent({
                 sessionId: serverSessionId,
                 sequenceId,
@@ -1331,7 +1306,8 @@ export default class ClmPlayer extends LightningElement {
         this.clearTimer();
         try {
             const serverSessionId = this.getServerSessionId();
-            if (serverSessionId && navigator.onLine) {
+            // Note: navigator.onLine is unreliable in Capacitor WebView - always try to complete
+            if (serverSessionId) {
                 this.session = await completeSession({ sessionId: serverSessionId });
             } else {
                 await queueOfflineAction({
@@ -1356,7 +1332,8 @@ export default class ClmPlayer extends LightningElement {
         try {
             if (this.session?.id) {
                 const serverSessionId = this.getServerSessionId();
-                if (serverSessionId && navigator.onLine) {
+                // Note: navigator.onLine is unreliable in Capacitor WebView - always try to cancel
+                if (serverSessionId) {
                     await cancelSession({ sessionId: serverSessionId });
                 } else {
                     await queueOfflineAction({

@@ -168,10 +168,8 @@ export default class AccountsTab extends LightningElement {
       this.reloadData(true);
     };
     this._onOffline = () => {
-      this.syncStatus = 'offline';
-      if (!this.hasCachedData) {
-        this.errorMessage = 'You are offline. Connect to load accounts.';
-      }
+      // Don't immediately show offline - let the API call failure handle it
+      // This prevents false offline status in Capacitor WebView
     };
     window.addEventListener('online', this._onOnline);
     window.addEventListener('offline', this._onOffline);
@@ -520,12 +518,12 @@ export default class AccountsTab extends LightningElement {
       if (cached?.length) {
         this.recordTypeOptions = this.normalizeComboboxOptions(cached, this.recordTypeOptions);
       }
-      if (typeof navigator === 'undefined' || navigator.onLine !== false) {
-        if (!cached?.length) {
-          const recordTypes = await getAccountsTabRecordTypeOptions();
-          await putAccountsTabRecordTypeOptionsCache(USER_ID, recordTypes);
-          this.recordTypeOptions = this.normalizeComboboxOptions(recordTypes, this.recordTypeOptions);
-        }
+      // Note: navigator.onLine is unreliable in Capacitor WebView
+      // Always try to fetch - let network failures be handled gracefully
+      if (!cached?.length) {
+        const recordTypes = await getAccountsTabRecordTypeOptions();
+        await putAccountsTabRecordTypeOptionsCache(USER_ID, recordTypes);
+        this.recordTypeOptions = this.normalizeComboboxOptions(recordTypes, this.recordTypeOptions);
       }
       this.classificationOptions = [
         { label: 'All Classifications', value: FILTER_ALL },
@@ -653,17 +651,8 @@ export default class AccountsTab extends LightningElement {
       // Cache read is best-effort; continue to the network call.
     }
 
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      if (!this.hasCachedData) {
-        this.errorMessage = 'You are offline. Connect to load accounts.';
-      }
-      this.syncStatus = 'offline';
-      if (token === this.loadRequestToken) {
-        this.isLoading = false;
-      }
-      return;
-    }
-
+    // Note: navigator.onLine is unreliable in Capacitor WebView
+    // Always try the API call - catch block handles real network failures
     this.syncStatus = 'updating';
     try {
       const result = await getAccountsTabPage(this.buildApexParams(false));
@@ -754,17 +743,8 @@ export default class AccountsTab extends LightningElement {
       // Cache read is best-effort; continue to the network call.
     }
 
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      if (!this.hasCachedData) {
-        this.errorMessage = 'You are offline. Connect to load accounts.';
-      }
-      this.syncStatus = 'offline';
-      if (token === this.mapRenderToken) {
-        this.isLoading = false;
-      }
-      return;
-    }
-
+    // Note: navigator.onLine is unreliable in Capacitor WebView
+    // Always try the API call - catch block handles real network failures
     this.syncStatus = 'updating';
     try {
       const summaryParams = {
@@ -1227,12 +1207,12 @@ export default class AccountsTab extends LightningElement {
 
   get isPwaContext() {
     const p = window?.location?.pathname || '';
-    return p === '/' || p.endsWith('/index.html') || p.endsWith('/accounts.html') || p.endsWith('/visits.html');
+    return p === '/' || p.endsWith('/index.html') || p.endsWith('/accounts.html') || p.endsWith('/account.html') || p.endsWith('/visits.html');
   }
 
   navigateToAccount(accountId) {
     if (this.isPwaContext) {
-      window.location.href = `/accounts.html?accountId=${accountId}`;
+      window.location.href = `/account.html?accountId=${accountId}`;
       return;
     }
     const sfInstance =
