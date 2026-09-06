@@ -532,7 +532,9 @@ function mountListView() {
         iframe.style.height = '100%';
         entityRoot.appendChild(iframe);
     }
-    const src = `/list.html?object=${encodeURIComponent(object)}`;
+    // BASE_URL respects the deploy base (e.g. "/Zeta/" on GitHub Pages, "/" on
+    // localhost/Netlify) so the iframe resolves under a subpath, not the domain root.
+    const src = `${import.meta.env.BASE_URL}list.html?object=${encodeURIComponent(object)}`;
     if (iframe.dataset.src !== src) {
         iframe.dataset.src = src;
         iframe.src = src;

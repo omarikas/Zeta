@@ -10,7 +10,9 @@ export const NavigationMixin = (Base) => {
                     window.open(`${String(sfInstance).replace(/\/$/, '')}/lightning/r/${obj}/${recordId}/view`, '_blank');
                 } else {
                     // Non-Account records open in the generic standard-API record page.
-                    window.open(`/record.html?recordId=${encodeURIComponent(recordId)}&object=${encodeURIComponent(obj)}`, '_blank');
+                    // BASE_URL keeps it under the deploy subpath (e.g. "/Zeta/").
+                    const base = (import.meta.env && import.meta.env.BASE_URL) || '/';
+                    window.open(`${base}record.html?recordId=${encodeURIComponent(recordId)}&object=${encodeURIComponent(obj)}`, '_blank');
                 }
             }
         }
