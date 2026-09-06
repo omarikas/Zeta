@@ -1049,10 +1049,67 @@ function setupSessionBar(token) {
         switchAppBtn.addEventListener('click', buildAppChooser);
     }
 
-    if (loginBtn) {
-        loginBtn.addEventListener('click', login);
-    }
+    setupLoginForm();
     // Screen visibility is owned by showScreen(); this only wires buttons.
+}
+
+const PRODUCTION_LOGIN = 'https://login.salesforce.com';
+const SANDBOX_LOGIN = 'https://test.salesforce.com';
+const MY_DOMAIN_SUFFIX = '.my.salesforce.com';
+
+// Build a My Domain login URL from a short company label (e.g. "zetapharma").
+function myDomainLoginUrlFromLabel(raw) {
+    let label = String(raw || '').trim().toLowerCase();
+    if (!label) return '';
+    label = label
+        .replace(/^https?:\/\//, '')
+        .replace(/\.my\.salesforce\.com.*$/, '')
+        .replace(/\.lightning\.force\.com.*$/, '')
+        .replace(/\/.*$/, '')
+        .replace(/[^a-z0-9-]/g, '');
+    return label ? `https://${label}${MY_DOMAIN_SUFFIX}` : '';
+}
+
+// Wire the ph-style sign-in form: environment select, custom domain field, and
+// the Sign in button (resolves the login URL before starting OAuth PKCE).
+function setupLoginForm() {
+    const envSelect = document.getElementById('login-env');
+    const domainField = document.getElementById('login-domain-field');
+    const domainInput = document.getElementById('login-domain');
+    const loginBtn = document.getElementById('login-btn');
+    const status = document.getElementById('login-status');
+
+    function resolveLoginUrl() {
+        const env = envSelect ? envSelect.value : 'production';
+        if (env === 'sandbox') return SANDBOX_LOGIN;
+        if (env === 'custom') return myDomainLoginUrlFromLabel(domainInput && domainInput.value);
+        return PRODUCTION_LOGIN;
+    }
+
+    function refresh() {
+        const env = envSelect ? envSelect.value : 'production';
+        if (domainField) domainField.hidden = env !== 'custom';
+        if (loginBtn) {
+            loginBtn.disabled = env === 'custom' && !resolveLoginUrl();
+        }
+    }
+
+    if (envSelect) envSelect.addEventListener('change', refresh);
+    if (domainInput) domainInput.addEventListener('input', refresh);
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            const url = resolveLoginUrl();
+            if (!url) return;
+            OAUTH_CONFIG.loginUrl = url;
+            if (status) {
+                status.hidden = false;
+                status.style.color = '#706e6b';
+                status.textContent = 'Opening sign-in…';
+            }
+            login();
+        });
+    }
+    refresh();
 }
 
 async function initializeApp() {

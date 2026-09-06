@@ -14,10 +14,6 @@
     </head>
     <body>
         <header id="app-nav" class="app-nav" hidden>
-            <div class="nav-brand">
-                <span id="nav-title" class="nav-title">Pharma Field</span>
-                <span class="nav-badge">v1.0.0</span>
-            </div>
 <nav id="app-tabs" class="nav-tabs" role="tablist"></nav>
             <div class="nav-actions nav-sidebar-actions">
                 <button id="switch-app-btn" class="nav-btn-switch" type="button" title="Choose a different app">
@@ -29,15 +25,47 @@
             </div>
         </header>
 
-        <div id="session-bar" class="session-bar" hidden>
-            <div class="session-form">
-                <h2>Sign in to Salesforce</h2>
-                <button id="login-btn" class="login-btn" type="button">
-                    Sign in with Salesforce
-                </button>
-                <p class="session-hint">
-                    Sign in with your Salesforce credentials, then choose which app to open.
+        <div id="session-bar" class="login" hidden>
+            <div class="login-card">
+                <div class="login-brand">
+                    <img src="/salesforce-cloud.png" alt="Salesforce" width="180" height="120" />
+                </div>
+                <h1>Welcome</h1>
+                <p class="login-lead">
+                    Sign in with your company account. After the first sync, you can keep working
+                    even without internet.
                 </p>
+                <div class="field">
+                    <label for="login-env">How do you sign in?</label>
+                    <select id="login-env">
+                        <option value="production">Live account</option>
+                        <option value="sandbox">Practice / training account</option>
+                        <option value="custom">Company login page</option>
+                    </select>
+                </div>
+                <div class="field" id="login-domain-field" hidden>
+                    <label for="login-domain">Company login name</label>
+                    <div class="domain-combo">
+                        <input
+                            id="login-domain"
+                            type="text"
+                            placeholder="yourcompany"
+                            inputmode="text"
+                            autocomplete="organization"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            aria-label="Company login name"
+                        />
+                        <span class="domain-suffix" aria-hidden="true">.my.salesforce.com</span>
+                    </div>
+                    <p class="login-help">
+                        Enter only the short name (for example <strong>zetapharma</strong>). Ask your
+                        admin if you’re not sure.
+                    </p>
+                </div>
+                <button id="login-btn" class="login-primary" type="button">Sign in</button>
+                <p id="login-status" class="login-status" hidden></p>
+                <p class="login-footer">Secure company sign-in</p>
             </div>
         </div>
 
