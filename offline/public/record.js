@@ -161,10 +161,23 @@ function extractLayoutGroups(recordUi, id) {
                     const apiName = comp.apiName;
                     if (!Object.prototype.hasOwnProperty.call(record.fields, apiName)) continue;
                     const objField = objInfo.fields?.[apiName];
+                    let cell = record.fields[apiName];
+                    // For lookups, the id field's displayValue is null; the
+                    // related record's name lives on the relationship field
+                    // (CreatedById -> CreatedBy, Brick_702__c -> Brick_702__r).
+                    if (objField?.dataType === 'Reference' && (cell?.displayValue == null)) {
+                        const relName = apiName.endsWith('__c')
+                            ? apiName.slice(0, -3) + '__r'
+                            : (apiName.endsWith('Id') ? apiName.slice(0, -2) : null);
+                        const relCell = relName ? record.fields[relName] : null;
+                        if (relCell && relCell.displayValue != null) {
+                            cell = { value: cell.value, displayValue: relCell.displayValue };
+                        }
+                    }
                     items.push({
                         apiName,
                         label: item.label || objField?.label || apiName,
-                        cell: record.fields[apiName],
+                        cell,
                         dataType: objField?.dataType
                     });
                 }
@@ -186,9 +199,9 @@ function formatUiValue(dataType, cell) {
         case 'Boolean':
             return val ? 'Yes' : 'No';
         case 'Reference': {
+            // displayValue is the related record's name; link opens it in-app.
             const text = disp || String(val);
-            const base = String(SF_INSTANCE).replace(/\.my\./i, '.lightning.');
-            return formatLink(`${base.replace(/\/$/, '')}/lightning/r/${val}/view`, text);
+            return formatLink(recordHref(val), text, true);
         }
         case 'Url':
             return formatLink(String(val), disp || String(val));
@@ -228,17 +241,25 @@ function formatCompound(value) {
     return parts.length ? parts.join(' · ') : '—';
 }
 
-function formatLink(href, text) {
+function formatLink(href, text, sameTab) {
     const anchor = document.createElement('a');
     anchor.href = href;
-    anchor.target = '_blank';
-    anchor.rel = 'noopener noreferrer';
+    if (!sameTab) {
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+    }
     anchor.className = 'record-link';
     anchor.textContent = text;
     return anchor;
 }
 
-function formatValue(field, value) {
+// In-app record page for a related record (relative so it works on localhost
+// and under a deploy subpath), instead of opening Salesforce.
+function recordHref(id) {
+    return `record.html?recordId=${encodeURIComponent(id)}`;
+}
+
+function formatValue(field, value, refName) {
     if (value == null || value === '') return '—';
     const type = field?.type;
 
@@ -251,12 +272,9 @@ function formatValue(field, value) {
             return String(value);
         case 'reference': {
             const source = String(value);
-            const targetType =
-                (field.referenceTo || []).find(Boolean) ||
-                (prefixMap ? prefixMap[source.slice(0, 3)] : null) ||
-                'sObject';
-            const base = String(SF_INSTANCE).replace(/\.my\./i, '.lightning.');
-            return formatLink(`${base.replace(/\/$/, '')}/lightning/r/${source}/view`, `${targetType}: ${source}`);
+            // Prefer the related record's name; fall back to the id.
+            const text = refName || source;
+            return formatLink(recordHref(source), text, true);
         }
         case 'address':
             return formatCompound(value);
@@ -271,6 +289,51 @@ function formatValue(field, value) {
         default: {
             if (typeof value === 'object') return JSON.stringify(value);
             return String(value);
+        }
+    }
+}
+
+// Resolve lookup ids to their record Names in one query per target object, and
+// stash them on the record under the field's relationshipName so renderTable
+// (and the in-app link) can show the name.
+async function attachReferenceNames(record, describe) {
+    const byObject = new Map(); // object -> Set(ids)
+    const fieldByName = {};
+    for (const f of describe.fields || []) {
+        if (f.type !== 'reference' || !f.relationshipName) continue;
+        const id = record[f.name];
+        if (!id || typeof id !== 'string') continue;
+        if (record[f.relationshipName]) continue; // already present
+        const target = (f.referenceTo || []).find(Boolean)
+            || (prefixMap ? prefixMap[id.slice(0, 3)] : null);
+        if (!target) continue;
+        fieldByName[f.name] = f;
+        if (!byObject.has(target)) byObject.set(target, new Set());
+        byObject.get(target).add(id);
+    }
+    if (!byObject.size) return;
+
+    const nameById = {};
+    await Promise.all(
+        Array.from(byObject.entries()).map(async ([obj, ids]) => {
+            const idList = Array.from(ids).map((v) => `'${v}'`).join(',');
+            try {
+                const res = await sfFetch(
+                    `/query?q=${encodeURIComponent(`SELECT Id, Name FROM ${obj} WHERE Id IN (${idList})`)}`
+                );
+                for (const r of res.records || []) {
+                    if (r.Id) nameById[r.Id] = r.Name;
+                }
+            } catch (_err) {
+                // Object may not have a Name field — leave those as ids.
+            }
+        })
+    );
+
+    for (const f of Object.values(fieldByName)) {
+        const id = record[f.name];
+        if (nameById[id]) {
+            record[f.relationshipName] = { Name: nameById[id] };
         }
     }
 }
@@ -454,7 +517,16 @@ function renderTable(fieldInfo, record, describe, filter) {
 
         const tdValue = document.createElement('td');
         tdValue.className = 'record-cell record-cell-value';
-        const formatted = formatValue(fieldInfo[f.name.toLowerCase()], value);
+        // For lookups, surface the related record's Name (when the SOQL fetched
+        // the relationship, e.g. Account__r.Name) instead of the raw id.
+        let refName;
+        if (f.type === 'reference' && f.relationshipName) {
+            const rel = record[f.relationshipName];
+            if (rel && typeof rel === 'object') {
+                refName = rel.Name || rel.Label || rel.Title || rel.Subject;
+            }
+        }
+        const formatted = formatValue(fieldInfo[f.name.toLowerCase()], value, refName);
         if (formatted instanceof Node) {
             tdValue.appendChild(formatted);
         } else {
@@ -550,6 +622,9 @@ async function loadRecord(recordId, objectName) {
                 sfFetch(`/sobjects/${encodeURIComponent(object)}/${encodeURIComponent(id)}`),
                 getDescribe(object)
             ]);
+            // The sObject row returns lookup ids only; resolve their names so
+            // reference fields show the related record name, not the raw id.
+            await attachReferenceNames(record, describe);
             writeCache(cacheKey, { record, object });
             renderRecord(record, object, describe);
             showError('');

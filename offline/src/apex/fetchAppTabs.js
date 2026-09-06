@@ -142,14 +142,9 @@ function readAppsCache() {
 }
 
 // The offline PWA fully renders whichever app hosts the field-rep home page.
-// Tag that app "offline ready" (keeping its real icon + navItems), guarantee it
-// carries the PWA-only tabs (CLM, Time Off), and sort it first. Its
-// developerName is normalized to PharmaField so openApp() injects those tabs.
+// Tag that app "offline ready" (keeping its real icon + navItems) and sort it
+// first. Tabs come straight from the org app's nav — nothing hard-coded.
 const OFFLINE_HOME_TAB = 'Field_Rep_Home_App';
-const OFFLINE_EXTRA_TABS = [
-    { key: 'CLM_Presentations', label: 'CLM Presentations', type: 'TabFlexiPage', iconUrl: null },
-    { key: 'Request_Time_Off', label: 'Request Time Off', type: 'TabFlexiPage', iconUrl: null }
-];
 
 function markOfflineFirst(apps) {
     const list = (apps || []).map((app) => {
@@ -158,18 +153,10 @@ function markOfflineFirst(apps) {
         if (!isFieldApp) {
             return app;
         }
-        const tabs = (app.tabs || []).slice();
-        OFFLINE_EXTRA_TABS.forEach((extra) => {
-            if (!tabs.some((t) => t.key === extra.key)) {
-                tabs.push(extra);
-            }
-        });
         return {
             ...app,
-            developerName: 'PharmaField',
             fullOffline: true,
-            description: app.description || PHARMA_APP.description,
-            tabs
+            description: app.description || PHARMA_APP.description
         };
     });
     // Offline-ready app first, then the rest.

@@ -11,6 +11,7 @@ import FieldRepPlanner from 'c/fieldRepPlanner';
 import AccountsTab from 'c/accountsTab';
 import TimeOffSubmission from 'c/timeOffSubmission';
 import ClmPresentationsHub from 'c/clmPresentationsHub';
+import VisitCallShell from 'c/visitCallShell';
 import { startSyncService, registerOfflineListener, setForceOfflineAndSync, getForceOffline } from 'c/clmOfflineSync';
 import { fetchApps, fetchTabs, PHARMA_APP } from './apex/fetchAppTabs';
 import { setupToastListener } from './toastManager';
@@ -21,8 +22,8 @@ const TOKEN_KEY = 'zeta.pwa.sfAccessToken';
 const REFRESH_TOKEN_KEY = 'zeta.pwa.sfRefreshToken';
 const INSTANCE_URL_KEY = 'zeta.pwa.sfInstanceUrl';
 const HOME_TAB_KEY = 'Field_Rep_Home_App';
-const TIME_OFF_TAB_KEY = 'Request_Time_Off';
-const CLM_TAB_KEY = 'CLM_Presentations';
+const VISIT_CALL_TAB_KEY = 'Visit_Call';
+const ACTIVE_VISIT_KEY = 'zeta.pwa.activeVisitId';
 let currentTab = HOME_TAB_KEY;
 let appTabs = [];
 
@@ -454,12 +455,92 @@ function mountClmPresentationsView() {
 // Map app tab keys (UI API developerName) to their PWA view panel + renderer.
 // Entity tabs (object list views) use the generic list page via mountListView.
 // Tabs not handled render the "not available" in-panel message.
+// Mount the Visit Call Shell (ported LWC). It is a Visit-record component: the
+// active Visit id comes from ?visit=, localStorage (set when opening a visit
+// from the planner), or — as a fallback so the tab is never empty — the user's
+// most recent visit.
+async function resolveActiveVisitId() {
+    const urlVisit = new URLSearchParams(window.location.search).get('visit');
+    if (urlVisit) {
+        return urlVisit;
+    }
+    const stored = window.localStorage.getItem(ACTIVE_VISIT_KEY);
+    if (stored) {
+        return stored;
+    }
+    try {
+        const base = String(globalThis.PLANNER_SF_INSTANCE || '').replace(/\/$/, '');
+        const token = globalThis.PLANNER_ACCESS_TOKEN || '';
+        if (!base || !token) {
+            return null;
+        }
+        const q = encodeURIComponent(
+            'SELECT Id FROM Visit__c ORDER BY Start_Date__c DESC NULLS LAST LIMIT 1'
+        );
+        const resp = await fetch(`${base}/services/data/v62.0/query?q=${q}`, {
+            headers: { Accept: 'application/json', Authorization: `Bearer ${token}` }
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            const id = data.records && data.records.length ? data.records[0].Id : null;
+            if (id) {
+                window.localStorage.setItem(ACTIVE_VISIT_KEY, id);
+                return id;
+            }
+        }
+    } catch (_err) {
+        // Offline / no access — shell shows its empty state.
+    }
+    return null;
+}
+
+function mountVisitCallView() {
+    const root = document.getElementById('view-visitcall');
+    if (!root) {
+        return;
+    }
+    let el = root.querySelector('c-visit-call-shell');
+    if (!el) {
+        el = createElement('c-visit-call-shell', { is: VisitCallShell });
+        root.appendChild(el);
+    }
+    resolveActiveVisitId().then((visitId) => {
+        if (visitId) {
+            el.recordId = visitId;
+        }
+    });
+}
+
+// Open a specific Visit in the Visit Call Shell (replaces the generic record
+// page for Visit__c). Called when a Visit row is opened from the entity list.
+function openVisitCall(recordId) {
+    if (recordId) {
+        window.localStorage.setItem(ACTIVE_VISIT_KEY, recordId);
+    }
+    const root = document.getElementById('view-visitcall');
+    const el = root && root.querySelector('c-visit-call-shell');
+    if (el && recordId) {
+        el.recordId = recordId;
+    }
+    currentTab = VISIT_CALL_TAB_KEY;
+    switchTab(VISIT_CALL_TAB_KEY);
+}
+
+// The entity list runs in an iframe; it posts here to open Visit records.
+window.addEventListener('message', (event) => {
+    const data = event && event.data;
+    if (data && data.type === 'open-visit-call' && data.recordId) {
+        openVisitCall(data.recordId);
+    }
+});
+
 const APP_TAB_VIEWS = {
     Field_Rep_Home_App: { panel: 'view-home', mount: mountHomeView },
     Field_Rep_Planner: { panel: 'view-planner', mount: mountPlannerView },
     Accounts_Tab: { panel: 'view-accounts', mount: mountAccountsView },
     Request_Time_Off: { panel: 'view-timeoff', mount: mountTimeOffView },
-    CLM_Presentations: { panel: 'view-clm', mount: mountClmPresentationsView }
+    CLM_Presentations: { panel: 'view-clm', mount: mountClmPresentationsView },
+    Visit_Call: { panel: 'view-visitcall', mount: mountVisitCallView }
 };
 
 function isEntityTab(tab) {
@@ -753,17 +834,6 @@ function openItem(item) {
 // Open the chosen app: load its tabs, render the sidebar, show the app screen.
 function openApp(app) {
     const tabs = app && Array.isArray(app.tabs) ? app.tabs.slice() : [];
-
-    // Pharma Field always carries the hard-coded PWA-only tabs.
-    if (app && app.developerName === 'PharmaField') {
-        if (!tabs.some((t) => t.key === TIME_OFF_TAB_KEY)) {
-            tabs.push({ key: TIME_OFF_TAB_KEY, label: 'Request Time Off', type: 'TabFlexiPage', iconUrl: null });
-        }
-        if (!tabs.some((t) => t.key === CLM_TAB_KEY)) {
-            tabs.push({ key: CLM_TAB_KEY, label: 'CLM Presentations', type: 'TabFlexiPage', iconUrl: null });
-        }
-    }
-
     appTabs = tabs;
     const titleEl = document.getElementById('nav-title');
     if (titleEl) titleEl.textContent = (app && app.label) || 'App';

@@ -120,7 +120,9 @@ function compileSfdxLwc() {
                         : `src/schema/${objectName}.js`;
                     return path.resolve(root, target);
                 }
-                return path.resolve(root, 'src/schema/noopSchema.js');
+                // Virtual module carrying the real object/field API names so
+                // getRecord + getFieldValue can resolve fields offline.
+                return '\0sfschema:' + spec;
             }
             if (id === 'lightning/uiRecordApi') {
                 return path.resolve(root, 'src/stubs/uiRecordApi.js');
@@ -153,6 +155,9 @@ function compileSfdxLwc() {
             if (id === '@salesforce/user/Id') {
                 return path.resolve(root, 'src/stubs/userId.js');
             }
+            if (id === '@salesforce/client/formFactor') {
+                return path.resolve(root, 'src/stubs/formFactor.js');
+            }
             if (id === '@salesforce/resourceUrl/jszip') {
                 return path.resolve(root, 'src/stubs/resourceJszip.js');
             }
@@ -165,6 +170,15 @@ function compileSfdxLwc() {
             return virtualFromImporter(id, importer);
         },
         load(id) {
+            if (id.startsWith('\0sfschema:')) {
+                const spec = id.slice('\0sfschema:'.length);
+                const dot = spec.indexOf('.');
+                if (dot > 0) {
+                    const objectApiName = spec.slice(0, dot);
+                    return `export default { objectApiName: ${JSON.stringify(objectApiName)}, fieldApiName: ${JSON.stringify(spec)} };`;
+                }
+                return `export default { objectApiName: ${JSON.stringify(spec)} };`;
+            }
             const asset = decodeAsset(id);
             if (!asset) {
                 return null;

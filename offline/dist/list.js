@@ -232,6 +232,12 @@ function formatCell(field, value) {
 
 function openRecord(id, object) {
     if (!id) return;
+    // Visit records open in the Visit Call Shell inside the host app instead of
+    // the generic record page. This list renders inside the app's entity iframe.
+    if (object === 'Visit__c' && window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'open-visit-call', recordId: id }, '*');
+        return;
+    }
     window.open(`/record.html?recordId=${encodeURIComponent(id)}&object=${encodeURIComponent(object || '')}`, '_blank');
 }
 
