@@ -6,12 +6,13 @@ import FieldRepHomeTodayPlan from 'c/fieldRepHomeTodayPlan';
 import FieldRepHomeNextBestCustomer from 'c/fieldRepHomeNextBestCustomer';
 import HomeOfficeMessages from 'c/homeOfficeMessages';
 import FieldRepHomeClmPrefetch from 'c/fieldRepHomeClmPrefetch';
+import ReportsHub from 'c/reportsHub';
 import FieldRepPlanner from 'c/fieldRepPlanner';
 import AccountsTab from 'c/accountsTab';
 import TimeOffSubmission from 'c/timeOffSubmission';
 import ClmPresentationsHub from 'c/clmPresentationsHub';
 import { startSyncService, registerOfflineListener, setForceOfflineAndSync, getForceOffline } from 'c/clmOfflineSync';
-import { fetchAppTabs } from './apex/fetchAppTabs';
+import { fetchApps, fetchTabs, PHARMA_APP } from './apex/fetchAppTabs';
 import { setupToastListener } from './toastManager';
 import './slds-shim.css';
 import './shell.css';
@@ -352,6 +353,7 @@ async function handleCapacitorCallback(url) {
 }
 
 // Initialize Capacitor App listener for deep links
+let deepLinkListenerAdded = false;
 async function initCapacitorListener() {
     if (!isCapacitor()) return;
 
@@ -360,7 +362,8 @@ async function initCapacitorListener() {
         await initCapacitorPlugins();
     }
 
-    if (capacitorApp) {
+    if (capacitorApp && !deepLinkListenerAdded) {
+        deepLinkListenerAdded = true;
         capacitorApp.addListener('appUrlOpen', (data) => {
             const url = data.url;
             console.log('[Capacitor] Deep link received:', url);
@@ -377,10 +380,7 @@ function logout() {
     window.localStorage.removeItem(INSTANCE_URL_KEY);
     configureRuntime('');
     unmountApp();
-    const nav = document.getElementById('app-nav');
-    const bar = document.getElementById('session-bar');
-    if (nav) nav.hidden = true;
-    if (bar) bar.hidden = false;
+    showScreen('login');
 }
 
 function mountHomeView() {
@@ -402,6 +402,9 @@ function mountHomeView() {
     }
     if (!homeRoot.querySelector('c-field-rep-home-next-best-customer')) {
         homeRoot.appendChild(createElement('c-field-rep-home-next-best-customer', { is: FieldRepHomeNextBestCustomer }));
+    }
+    if (!homeRoot.querySelector('c-reports-hub')) {
+        homeRoot.appendChild(createElement('c-reports-hub', { is: ReportsHub }));
     }
     if (!homeRoot.querySelector('c-field-rep-home-clm-prefetch')) {
         homeRoot.appendChild(createElement('c-field-rep-home-clm-prefetch', { is: FieldRepHomeClmPrefetch }));
@@ -463,6 +466,13 @@ function isEntityTab(tab) {
     return appTabs.some((t) => t.key === tab && t.type === 'Entity');
 }
 
+// A tab is "supported" if it has an offline renderer or is an object list view.
+function isSupportedTab(tab) {
+    if (!tab) return false;
+    if (APP_TAB_VIEWS[tab.key]) return true;
+    return tab.type === 'Entity';
+}
+
 function switchTab(tab) {
     if (!tab) return;
     currentTab = tab;
@@ -503,7 +513,7 @@ function showUnsupportedTab(key) {
     panel.innerHTML = `
         <div class="unsupported-message">
             <h2>${label}</h2>
-            <p>This tab is only available in the Pharma Field Salesforce app and cannot be rendered in this PWA.</p>
+            <p>This tab isn't available offline. Open it in Salesforce, or pick another tab from the sidebar.</p>
         </div>
     `;
     panel.classList.add('active');
@@ -530,23 +540,6 @@ function mountListView() {
     entityRoot.classList.add('active');
 }
 
-function mountApp() {
-    if (isEntityTab(currentTab)) {
-        const panel = document.getElementById('view-entity');
-        panel?.classList.add('active');
-        mountListView();
-        return;
-    }
-    const view = APP_TAB_VIEWS[currentTab];
-    if (view) {
-        view.mount();
-    } else {
-        const panel = document.getElementById('view-unsupported');
-        panel?.classList.add('active');
-        showUnsupportedTab(currentTab);
-    }
-}
-
 function unmountApp() {
     const homeRoot = document.getElementById('view-home');
     const accountsRoot = document.getElementById('view-accounts');
@@ -558,7 +551,7 @@ function unmountApp() {
     if (plannerRoot) plannerRoot.innerHTML = '';
     if (entityRoot) entityRoot.innerHTML = '';
     if (unsupportedRoot) unsupportedRoot.innerHTML = '';
-    switchTab(HOME_TAB_KEY);
+    currentTab = HOME_TAB_KEY;
 }
 
 function registerServiceWorker() {
@@ -572,58 +565,259 @@ function registerServiceWorker() {
     });
 }
 
-function buildAppTabs() {
-    const tabsContainer = document.getElementById('app-tabs');
-    if (!tabsContainer) return;
+// Show exactly one top-level screen: 'login' | 'chooser' | 'app'.
+function showScreen(name) {
+    const login = document.getElementById('session-bar');
+    const chooser = document.getElementById('app-chooser');
+    const nav = document.getElementById('app-nav');
+    const shell = document.getElementById('app');
+    // Toggle inline display, not the [hidden] attribute: .app-nav / .session-bar
+    // set `display` in CSS, which would otherwise override [hidden].
+    if (login) login.style.display = name === 'login' ? 'flex' : 'none';
+    if (chooser) chooser.style.display = name === 'chooser' ? 'block' : 'none';
+    if (nav) nav.style.display = name === 'app' ? 'flex' : 'none';
+    if (shell) shell.style.display = name === 'app' ? '' : 'none';
+}
 
-    fetchAppTabs()
-        .then((tabs) => {
-            appTabs = tabs;
-            // Always surface the Request Time Off tab (fixed PWA feature).
-            if (!tabs.some((t) => t.key === TIME_OFF_TAB_KEY)) {
-                tabs.push({
-                    key: TIME_OFF_TAB_KEY,
-                    label: 'Request Time Off',
-                    type: 'TabFlexiPage',
-                    iconUrl: null
-                });
-            }
-            // Always surface the CLM Presentations tab (hard-coded PWA feature).
-            if (!tabs.some((t) => t.key === CLM_TAB_KEY)) {
-                tabs.push({
-                    key: CLM_TAB_KEY,
-                    label: 'CLM Presentations',
-                    type: 'TabFlexiPage',
-                    iconUrl: null
-                });
-            }
-            tabsContainer.innerHTML = '';
-            tabs.forEach((tab) => {
-                const btn = document.createElement('button');
-                btn.className = 'nav-tab';
-                btn.type = 'button';
-                btn.role = 'tab';
-                btn.dataset.tab = tab.key;
-                btn.setAttribute('aria-selected', 'false');
-                btn.title = tab.label;
+// Salesforce-style App Launcher: search across apps + items, open an app or
+// jump straight to a single object/tab. Renders Pharma immediately (local,
+// always tappable), then augments with the org's apps once fetchApps resolves.
+let chooserApps = [];
+let chooserItems = [];
+let chooserSearchWired = false;
 
-                const icon = tab.iconUrl
-                    ? `<img class="nav-icon" src="${tab.iconUrl}" alt="" loading="lazy" onerror="this.style.display='none'" />`
-                    : defaultTabIcon();
-                btn.innerHTML = `${icon}<span>${tab.label}</span>`;
-                btn.addEventListener('click', () => switchTab(tab.key));
-                tabsContainer.appendChild(btn);
-            });
+function buildAppChooser() {
+    showScreen('chooser');
+    const grid = document.getElementById('app-chooser-grid');
+    if (!grid) return;
 
-            // Restore selection; default to Home when the active tab is gone.
-            if (!tabs.some((t) => t.key === currentTab)) {
-                currentTab = tabs.some((t) => t.key === HOME_TAB_KEY) ? HOME_TAB_KEY : (tabs[0]?.key || null);
+    // Seed instantly with the local Pharma app so the launcher is never blank.
+    chooserApps = [PHARMA_APP];
+    chooserItems = buildItemsFromApps(chooserApps);
+    renderChooser();
+    wireChooserSearch();
+
+    fetchApps()
+        .then((apps) => {
+            if (apps && apps.length) {
+                chooserApps = apps;
+                renderChooser();
             }
-            switchTab(currentTab);
         })
         .catch((error) => {
-            console.warn('[AppTabs] Failed to load app tabs:', error);
+            console.warn('[AppChooser] Failed to load org apps:', error);
         });
+
+    // "All Items" comes from the org-wide /tabs list (every object + flexipage
+    // the user can open), not just the selected app's navItems.
+    fetchTabs()
+        .then((tabs) => {
+            if (tabs && tabs.length) {
+                chooserItems = tabs;
+                renderChooser();
+            }
+        })
+        .catch((error) => {
+            console.warn('[AppChooser] Failed to load org tabs:', error);
+        });
+}
+
+// Flatten every app's tabs into a de-duped, sorted item list (the "All Items"
+// section — objects, record pages and flexipage tabs the user can open).
+function buildItemsFromApps(apps) {
+    const seen = new Map();
+    (apps || []).forEach((app) => {
+        (app.tabs || []).forEach((tab) => {
+            if (tab && tab.key && !seen.has(tab.key)) {
+                seen.set(tab.key, tab);
+            }
+        });
+    });
+    return Array.from(seen.values()).sort((a, b) =>
+        (a.label || '').localeCompare(b.label || '')
+    );
+}
+
+function wireChooserSearch() {
+    if (chooserSearchWired) return;
+    const input = document.getElementById('chooser-search');
+    if (!input) return;
+    chooserSearchWired = true;
+    input.addEventListener('input', renderChooser);
+}
+
+function renderChooser() {
+    const term = (document.getElementById('chooser-search')?.value || '').trim().toLowerCase();
+    const match = (label) => !term || (label || '').toLowerCase().includes(term);
+    renderAppCards(chooserApps.filter((a) => match(a.label)));
+    renderItemCards(chooserItems.filter((i) => match(i.label)));
+}
+
+// Build an icon element: real image when a URL loads, else a letter tile.
+// A broken/blocked icon URL falls back to the letter instead of a blank gap.
+function buildIconEl(url, label, baseCls) {
+    const letter = (label || '?').charAt(0);
+    const fallback = document.createElement('span');
+    fallback.className = `${baseCls} ${baseCls}-fallback`;
+    fallback.textContent = letter;
+    if (!url) return fallback;
+
+    const img = document.createElement('img');
+    img.className = baseCls;
+    img.src = url;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.addEventListener('error', () => {
+        if (img.parentNode) img.parentNode.replaceChild(fallback, img);
+    });
+    return img;
+}
+
+function renderAppCards(apps) {
+    const grid = document.getElementById('app-chooser-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (!apps.length) {
+        grid.innerHTML = '<p class="chooser-empty">No matching apps.</p>';
+        return;
+    }
+    apps.forEach((app) => {
+        const card = document.createElement('button');
+        card.className = 'chooser-card' + (app.fullOffline ? ' chooser-card-offline' : '');
+        card.type = 'button';
+        card.title = app.label;
+
+        const tabCount = (app.tabs && app.tabs.length) || 0;
+        const desc = app.description || `${tabCount} tab${tabCount === 1 ? '' : 's'}`;
+        const body = document.createElement('span');
+        body.className = 'chooser-card-body';
+        body.innerHTML =
+            `<span class="chooser-card-title">${app.label}</span>` +
+            `<span class="chooser-card-desc">${desc}</span>`;
+
+        card.appendChild(buildIconEl(app.iconUrl, app.label, 'chooser-card-icon'));
+        card.appendChild(body);
+        if (app.fullOffline) {
+            const badge = document.createElement('span');
+            badge.className = 'chooser-card-badge';
+            badge.textContent = 'Offline ready';
+            card.appendChild(badge);
+        }
+        card.addEventListener('click', () => openApp(app));
+        grid.appendChild(card);
+    });
+}
+
+function renderItemCards(items) {
+    const grid = document.getElementById('item-chooser-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (!items.length) {
+        grid.innerHTML = '<p class="chooser-empty">No matching items.</p>';
+        return;
+    }
+    items.forEach((item) => {
+        const chip = document.createElement('button');
+        chip.className = 'chooser-item';
+        chip.type = 'button';
+        chip.title = item.label;
+
+        const label = document.createElement('span');
+        label.className = 'chooser-item-label';
+        label.textContent = item.label;
+
+        chip.appendChild(buildIconEl(item.iconUrl, item.label, 'chooser-item-icon'));
+        chip.appendChild(label);
+        chip.addEventListener('click', () => openItem(item));
+        grid.appendChild(chip);
+    });
+}
+
+// Open a single object/tab directly (the "All Items" behaviour), so the shell
+// shows just that item. switchTab handles entity list views, known offline
+// views and the "not available" fallback.
+function openItem(item) {
+    if (!item || !item.key) return;
+    const tabs = [item];
+    appTabs = tabs;
+    const titleEl = document.getElementById('nav-title');
+    if (titleEl) titleEl.textContent = item.label || 'Item';
+    renderTabButtons(tabs);
+    currentTab = item.key;
+    showScreen('app');
+    switchTab(item.key);
+}
+
+// Open the chosen app: load its tabs, render the sidebar, show the app screen.
+function openApp(app) {
+    const tabs = app && Array.isArray(app.tabs) ? app.tabs.slice() : [];
+
+    // Pharma Field always carries the hard-coded PWA-only tabs.
+    if (app && app.developerName === 'PharmaField') {
+        if (!tabs.some((t) => t.key === TIME_OFF_TAB_KEY)) {
+            tabs.push({ key: TIME_OFF_TAB_KEY, label: 'Request Time Off', type: 'TabFlexiPage', iconUrl: null });
+        }
+        if (!tabs.some((t) => t.key === CLM_TAB_KEY)) {
+            tabs.push({ key: CLM_TAB_KEY, label: 'CLM Presentations', type: 'TabFlexiPage', iconUrl: null });
+        }
+    }
+
+    appTabs = tabs;
+    const titleEl = document.getElementById('nav-title');
+    if (titleEl) titleEl.textContent = (app && app.label) || 'App';
+
+    renderTabButtons(tabs);
+    showScreen('app');
+
+    // Land on the first tab that actually renders (Home preferred), so the app
+    // never opens on a blank "not available" panel. All tabs stay in the nav.
+    const homeTab = tabs.find((t) => t.key === HOME_TAB_KEY && isSupportedTab(t));
+    const firstSupported = tabs.find(isSupportedTab);
+    currentTab = (homeTab || firstSupported || tabs[0] || {}).key || null;
+
+    if (currentTab) {
+        switchTab(currentTab);
+    } else {
+        // App returned no tabs (only the org's *selected* app exposes navItems).
+        // Clear any stale panel and show a clean empty state.
+        showEmptyApp(app);
+    }
+}
+
+function showEmptyApp(app) {
+    document.querySelectorAll('.view-panel').forEach((p) => p.classList.remove('active'));
+    const panel = document.getElementById('view-unsupported');
+    if (!panel) return;
+    const label = (app && app.label) || 'This app';
+    panel.innerHTML = `
+        <div class="unsupported-message">
+            <h2>${label}</h2>
+            <p>No offline-available tabs for this app. Use <strong>All Items</strong> in the launcher to open an object, or open the app in Salesforce.</p>
+        </div>
+    `;
+    panel.classList.add('active');
+}
+
+function renderTabButtons(tabs) {
+    const tabsContainer = document.getElementById('app-tabs');
+    if (!tabsContainer) return;
+    tabsContainer.innerHTML = '';
+    tabs.forEach((tab) => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-tab';
+        btn.type = 'button';
+        btn.role = 'tab';
+        btn.dataset.tab = tab.key;
+        btn.setAttribute('aria-selected', 'false');
+        btn.title = tab.label;
+
+        const icon = tab.iconUrl
+            ? `<img class="nav-icon" src="${tab.iconUrl}" alt="" loading="lazy" onerror="this.style.display='none'" />`
+            : defaultTabIcon();
+        btn.innerHTML = `${icon}<span>${tab.label}</span>`;
+        btn.addEventListener('click', () => switchTab(tab.key));
+        tabsContainer.appendChild(btn);
+    });
 }
 
 function defaultTabIcon() {
@@ -633,9 +827,7 @@ function defaultTabIcon() {
 }
 
 function setupNavigation() {
-    // Sidebar nav tabs (built dynamically from the org's app definition)
-    buildAppTabs();
-
+    // Sidebar nav tabs are rendered per-app by openApp() after the launcher.
     // Mode toggle switch
     setupModeToggle();
 }
@@ -767,50 +959,28 @@ window.testAccountsEndpoint = async function() {
 };
 
 function setupSessionBar(token) {
-    const bar = document.getElementById('session-bar');
     const loginBtn = document.getElementById('login-btn');
-    const nav = document.getElementById('app-nav');
     const logoutBtn = document.getElementById('logout-btn');
-
-    // Add debug indicator for Capacitor detection
-    if (bar && !document.getElementById('capacitor-debug')) {
-        const debugEl = document.createElement('div');
-        debugEl.id = 'capacitor-debug';
-        debugEl.style.cssText = 'font-size: 10px; color: #666; margin-top: 8px; padding: 4px; background: #f0f0f0; border-radius: 4px;';
-        const capacitorDetected = isCapacitor();
-        const callbackUrl = OAUTH_CONFIG.callbackUrl;
-        debugEl.innerHTML = `
-            <div>Capacitor: ${capacitorDetected ? 'YES' : 'NO'}</div>
-            <div>Callback: ${callbackUrl}</div>
-            <div style="margin-top: 4px; font-size: 9px;">
-                <a href="#" onclick="localStorage.setItem('forceCapacitor','true');location.reload();return false;" style="color: #0176d3;">Force Capacitor</a>
-                |
-                <a href="#" onclick="localStorage.removeItem('forceCapacitor');location.reload();return false;" style="color: #0176d3;">Reset</a>
-            </div>
-        `;
-        bar.appendChild(debugEl);
-    }
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
     }
 
+    const chooserLogoutBtn = document.getElementById('chooser-logout-btn');
+    if (chooserLogoutBtn) {
+        chooserLogoutBtn.addEventListener('click', logout);
+    }
+
+    // "Switch app" returns to the launcher without dropping the session.
+    const switchAppBtn = document.getElementById('switch-app-btn');
+    if (switchAppBtn) {
+        switchAppBtn.addEventListener('click', buildAppChooser);
+    }
+
     if (loginBtn) {
         loginBtn.addEventListener('click', login);
     }
-
-    if (!bar) {
-        return;
-    }
-
-    if (!token) {
-        bar.hidden = false;
-        if (nav) {
-            nav.hidden = true;
-        }
-    } else if (nav) {
-        nav.hidden = false;
-    }
+    // Screen visibility is owned by showScreen(); this only wires buttons.
 }
 
 async function initializeApp() {
@@ -874,7 +1044,10 @@ async function initializeApp() {
     setupSessionBar(token);
     setupToastListener();
     if (token) {
-        mountApp();
+        // Signed in → app launcher (pick which app to open).
+        buildAppChooser();
+    } else {
+        showScreen('login');
     }
     registerServiceWorker();
 

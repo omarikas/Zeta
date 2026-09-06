@@ -11,17 +11,20 @@
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon.svg" />
-      <script type="module" crossorigin src="/assets/index-CCvWnxOK.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-DINL8ylS.css">
+      <script type="module" crossorigin src="/assets/index-_XQJGQVT.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-BLt7-thu.css">
     </head>
     <body>
         <header id="app-nav" class="app-nav" hidden>
             <div class="nav-brand">
-                <span class="nav-title">Pharma Field</span>
+                <span id="nav-title" class="nav-title">Pharma Field</span>
                 <span class="nav-badge">v1.0.0</span>
             </div>
 <nav id="app-tabs" class="nav-tabs" role="tablist"></nav>
             <div class="nav-actions nav-sidebar-actions">
+                <button id="switch-app-btn" class="nav-btn-switch" type="button" title="Choose a different app">
+                    Switch app
+                </button>
                 <button id="logout-btn" class="nav-btn-logout" type="button" title="Log out and clear access token">
                     Log out
                 </button>
@@ -35,14 +38,33 @@
                     Sign in with Salesforce
                 </button>
                 <p class="session-hint">
-                    Click to sign in with your Salesforce credentials. The PWA calls
-                    <code>/services/apexrest/planner/v1/home/dashboard</code>,
-                    <code>/services/apexrest/planner/v1/home/today-plan</code>,
-                    <code>/services/apexrest/planner/v1/home/next-best-customers</code>,
-                    and
-                    <code>/services/apexrest/planner/v1/week</code>.
+                    Sign in with your Salesforce credentials, then choose which app to open.
                 </p>
             </div>
+        </div>
+
+        <div id="app-chooser" class="app-chooser" hidden>
+            <header class="chooser-head">
+                <div>
+                    <h1 class="chooser-title">App Launcher</h1>
+                    <p class="chooser-sub">Open an app, or jump straight to an item. Pharma Field works fully offline.</p>
+                </div>
+                <button id="chooser-logout-btn" class="nav-btn-logout" type="button" title="Log out">
+                    Log out
+                </button>
+            </header>
+            <div class="chooser-search-wrap">
+                <input id="chooser-search" class="chooser-search" type="search"
+                    placeholder="Search apps and items…" autocomplete="off" autocorrect="off" />
+            </div>
+            <section class="chooser-section">
+                <h2 class="chooser-section-title">All Apps</h2>
+                <div id="app-chooser-grid" class="chooser-grid"></div>
+            </section>
+            <section class="chooser-section">
+                <h2 class="chooser-section-title">All Items</h2>
+                <div id="item-chooser-grid" class="chooser-grid chooser-grid-items"></div>
+            </section>
         </div>
         <main id="app" class="app-shell">
             <div id="view-home" class="view-panel active"></div>

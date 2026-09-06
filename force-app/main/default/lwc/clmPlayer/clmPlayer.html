@@ -1,5 +1,16 @@
 <template>
-    <section class="clm-player" role="dialog" aria-modal="true" aria-label="CLM Presentation Player">
+    <section class={playerClass} role="dialog" aria-modal="true" aria-label="CLM Presentation Player">
+        <template if:true={isFullscreen}>
+            <button class="fullscreen-exit-btn" onclick={toggleFullscreen} title={fullscreenLabel} aria-label={fullscreenLabel}>
+                <lightning-icon icon-name="utility:contract_alt" size="small"></lightning-icon>
+            </button>
+            <button class="fullscreen-nav-btn fullscreen-nav-prev" onclick={handlePrevious} disabled={isPreviousDisabled} title="Previous slide" aria-label="Previous slide">
+                <lightning-icon icon-name="utility:chevronleft" size="small"></lightning-icon>
+            </button>
+            <button class="fullscreen-nav-btn fullscreen-nav-next" onclick={handleNext} disabled={isNextDisabled} title="Next slide" aria-label="Next slide">
+                <lightning-icon icon-name="utility:chevronright" size="small"></lightning-icon>
+            </button>
+        </template>
         <header class="player-header">
             <button class="player-icon-btn" title="Close" onclick={handleCancel}>
                 <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
@@ -194,6 +205,11 @@
                 </template>
             </div>
             <div class="player-controls">
+                <lightning-button
+                    label={fullscreenLabel}
+                    icon-name={fullscreenIconName}
+                    onclick={toggleFullscreen}
+                ></lightning-button>
                 <lightning-button
                     label="Previous"
                     icon-name="utility:chevronleft"

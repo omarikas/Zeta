@@ -55,6 +55,7 @@ export default class ClmPlayer extends LightningElement {
     @track htmlLoadingStatus;
     @track pdfViewerSrc;
     @track useNativePdfViewer = false;
+    @track isFullscreen = false;
 
     timerId;
     slideImageLoadTimerId;
@@ -100,6 +101,27 @@ export default class ClmPlayer extends LightningElement {
         this.revokeObjectUrls();
         document.removeEventListener('visibilitychange', this.visibilityHandler);
         window.removeEventListener('message', this.viewerMessageHandler);
+    }
+
+    // ---- Full screen -----------------------------------------------------
+    // The HTML5 Fullscreen API is a no-op inside Capacitor's Android WebView
+    // (no onShowCustomView), so this is a pseudo-fullscreen: the player already
+    // covers the viewport, and toggling hides the header/footer/thumbnails so
+    // the slide fills the screen. A floating button restores the chrome.
+    get playerClass() {
+        return this.isFullscreen ? 'clm-player is-fullscreen' : 'clm-player';
+    }
+
+    get fullscreenIconName() {
+        return this.isFullscreen ? 'utility:contract_alt' : 'utility:expand_alt';
+    }
+
+    get fullscreenLabel() {
+        return this.isFullscreen ? 'Exit full screen' : 'Full screen';
+    }
+
+    toggleFullscreen() {
+        this.isFullscreen = !this.isFullscreen;
     }
 
     renderedCallback() {
